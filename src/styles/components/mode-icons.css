@@ -1,25 +1,76 @@
 .mode-icon {
+  position: relative;
+  z-index: 1;
   display: block;
   flex: 0 0 auto;
   overflow: visible;
+  fill: none;
   stroke: currentColor;
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 1.65;
-  filter: drop-shadow(0 0 8px color-mix(in srgb, currentColor 18%, transparent));
+  filter: drop-shadow(0 0 7px color-mix(in srgb, currentColor 16%, transparent));
+  shape-rendering: geometricPrecision;
   vector-effect: non-scaling-stroke;
 }
 
 .page-header__icon {
   position: relative;
+  isolation: isolate;
   display: grid;
   flex: 0 0 auto;
   width: 2.65rem;
   height: 2.65rem;
   place-items: center;
-  overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--color-secondary) 20%, var(--color-border));
-  border-radius: 1rem;
+  overflow: visible;
+  border: 1px solid color-mix(in srgb, var(--color-secondary) 22%, var(--color-border));
+  border-radius: 1.05rem;
+  background:
+    radial-gradient(circle at 50% 22%, color-mix(in srgb, var(--color-secondary) 18%, transparent), transparent 58%),
+    radial-gradient(circle at 85% 95%, color-mix(in srgb, var(--color-primary) 7%, transparent), transparent 52%),
+    linear-gradient(145deg, color-mix(in srgb, var(--color-bg-elevated) 88%, var(--color-secondary) 12%), color-mix(in srgb, var(--color-bg) 92%, var(--color-primary) 8%));
+  color: color-mix(in srgb, var(--color-secondary) 76%, var(--color-primary) 24%);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #ffffff 64%, transparent),
+    0 8px 22px rgba(21, 35, 55, 0.07),
+    0 0 18px color-mix(in srgb, var(--color-secondary) 12%, transparent);
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    color 180ms ease,
+    transform 180ms ease;
+}
+
+.page-header__icon::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: -0.42rem;
+  border: 0;
+  border-radius: 1.4rem;
+  background:
+    radial-gradient(circle, color-mix(in srgb, var(--color-secondary) 18%, transparent), transparent 68%);
+  filter: blur(7px);
+  opacity: 0.72;
+  pointer-events: none;
+}
+
+.page-header__icon::after {
+  content: '';
+  position: absolute;
+  inset: 0.36rem;
+  z-index: 0;
+  border: 1px solid color-mix(in srgb, var(--color-secondary) 14%, transparent);
+  border-radius: 0.72rem;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, #ffffff 26%, transparent), transparent 46%),
+    linear-gradient(315deg, color-mix(in srgb, var(--color-primary) 7%, transparent), transparent 52%);
+  opacity: 0.74;
+  pointer-events: none;
+}
+
+[data-theme='dark'] .page-header__icon {
+  border-color: color-mix(in srgb, var(--color-secondary) 20%, var(--color-border));
   background:
     radial-gradient(circle at 52% 28%, rgba(244, 205, 116, 0.16), transparent 56%),
     linear-gradient(145deg, rgba(214, 168, 74, 0.08), rgba(139, 30, 30, 0.06) 45%, rgba(5, 5, 8, 0.76));
@@ -30,23 +81,19 @@
     0 0 22px rgba(214, 168, 74, 0.08);
 }
 
-.page-header__icon::before {
-  content: '';
-  position: absolute;
-  inset: 0.35rem;
-  border: 1px solid rgba(214, 168, 74, 0.13);
-  border-radius: 0.78rem;
-  pointer-events: none;
+[data-theme='dark'] .page-header__icon::before {
+  background:
+    radial-gradient(circle, rgba(214, 168, 74, 0.18), rgba(139, 30, 30, 0.08) 48%, transparent 72%);
+  opacity: 0.62;
 }
 
-.page-header__icon::after {
-  content: '';
-  position: absolute;
+[data-theme='dark'] .page-header__icon::after {
   inset: auto 0.45rem 0.35rem;
   height: 1px;
+  border: 0;
+  border-radius: 0;
   background: linear-gradient(90deg, transparent, rgba(214, 168, 74, 0.42), transparent);
   opacity: 0.65;
-  pointer-events: none;
 }
 
 .page-header__icon .mode-icon {
