@@ -1,0 +1,286 @@
+/* ── Destaque da Área de Estudos na Home ── */
+.home-study-section {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 18% 48%, color-mix(in srgb, var(--color-secondary) 8%, transparent), transparent 32%),
+    radial-gradient(circle at 82% 72%, color-mix(in srgb, var(--color-primary) 8%, transparent), transparent 38%),
+    var(--color-bg);
+}
+
+.home-study-spotlight {
+  position: relative;
+  display: grid;
+  min-height: 560px;
+  grid-template-columns: minmax(360px, 0.9fr) minmax(0, 1.1fr);
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--color-secondary) 22%, var(--color-border));
+  border-radius: 1.75rem;
+  background:
+    linear-gradient(112deg, color-mix(in srgb, var(--color-bg-secondary) 94%, transparent), color-mix(in srgb, var(--color-bg-elevated) 96%, transparent)),
+    var(--color-bg-elevated);
+  box-shadow:
+    var(--shadow-card),
+    inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  isolation: isolate;
+}
+
+.home-study-spotlight::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--color-secondary) 5%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--color-secondary) 5%, transparent) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: linear-gradient(90deg, #000, transparent 68%);
+  opacity: 0.62;
+}
+
+.home-study-spotlight::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: 9%;
+  right: 6%;
+  width: 30%;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-secondary) 44%, transparent), transparent);
+  opacity: 0.72;
+}
+
+.home-study-spotlight__scout {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 560px;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid color-mix(in srgb, var(--color-secondary) 12%, var(--color-border));
+  padding: 1rem 0 0;
+}
+
+.home-study-spotlight__scout::after {
+  content: '';
+  position: absolute;
+  right: -1px;
+  top: 15%;
+  width: 1px;
+  height: 70%;
+  background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--color-secondary) 38%, transparent), transparent);
+}
+
+.home-study-spotlight__scout-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 92%;
+  height: 76%;
+  border-radius: 50%;
+  background:
+    radial-gradient(ellipse at 50% 48%, color-mix(in srgb, var(--color-secondary) 14%, transparent), transparent 62%),
+    radial-gradient(ellipse at 45% 72%, color-mix(in srgb, var(--color-primary) 9%, transparent), transparent 70%);
+  filter: blur(18px);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.home-study-scout {
+  position: relative;
+  z-index: 1;
+  width: min(112%, 530px);
+  height: 540px;
+  margin: 0 auto -1.25rem;
+  align-self: flex-end;
+}
+
+.home-study-scout .scout-image {
+  object-position: center bottom;
+  filter:
+    drop-shadow(0 28px 34px rgba(0, 0, 0, 0.42))
+    drop-shadow(0 0 18px color-mix(in srgb, var(--color-secondary) 10%, transparent))
+    saturate(1.03)
+    contrast(1.02);
+}
+
+.home-study-spotlight__content {
+  position: relative;
+  z-index: 1;
+  padding: 3.2rem clamp(2rem, 4vw, 3.6rem) 3.2rem clamp(2rem, 3.5vw, 3.2rem);
+}
+
+.home-study-spotlight__content h2 {
+  max-width: 650px;
+  margin-top: 1rem;
+  color: var(--color-text);
+  font-size: clamp(2rem, 4vw, 3.15rem);
+  font-weight: 900;
+  letter-spacing: -0.045em;
+  line-height: 1.05;
+}
+
+.home-study-spotlight__content > p {
+  max-width: 700px;
+  margin-top: 1.1rem;
+  color: var(--color-text-muted);
+  font-size: 0.98rem;
+  line-height: 1.8;
+}
+
+.home-study-spotlight__points {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem;
+  margin-top: 1.55rem;
+}
+
+.home-study-spotlight__points > div {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  border: 1px solid color-mix(in srgb, var(--color-secondary) 14%, var(--color-border));
+  border-radius: 0.95rem;
+  background: color-mix(in srgb, var(--color-bg) 52%, transparent);
+  padding: 0.8rem;
+}
+
+.home-study-spotlight__points span {
+  color: var(--color-secondary);
+  font-size: 0.63rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.home-study-spotlight__points p,
+.home-study-spotlight__points strong {
+  display: block;
+}
+
+.home-study-spotlight__points strong {
+  margin-bottom: 0.2rem;
+  color: var(--color-text);
+  font-size: 0.72rem;
+}
+
+.home-study-spotlight__points p {
+  color: var(--color-text-muted);
+  font-size: 0.65rem;
+  line-height: 1.45;
+}
+
+.home-study-spotlight__footer {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+  margin-top: 1.65rem;
+}
+
+.home-study-spotlight__footer > p {
+  color: var(--color-text-muted);
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+.home-study-spotlight__footer > p::before {
+  content: '●';
+  margin-right: 0.45rem;
+  color: var(--color-success);
+  font-size: 0.55rem;
+}
+
+.home-arena-section {
+  position: relative;
+  background:
+    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--color-secondary) 6%, transparent), transparent 30%),
+    var(--color-bg);
+}
+
+@media (max-width: 1023px) {
+  .home-study-spotlight {
+    min-height: 540px;
+    grid-template-columns: minmax(320px, 0.86fr) minmax(0, 1.14fr);
+  }
+
+  .home-study-spotlight__scout {
+    min-height: 540px;
+  }
+
+  .home-study-scout {
+    width: min(120%, 450px);
+    height: 500px;
+  }
+
+  .home-study-spotlight__content {
+    padding-inline: 2rem;
+  }
+
+  .home-study-spotlight__points {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 767px) {
+  .home-study-spotlight {
+    min-height: 0;
+    grid-template-columns: 1fr;
+  }
+
+  .home-study-spotlight__content {
+    order: 1;
+    padding: 2rem 1.35rem 1rem;
+    text-align: center;
+  }
+
+  .home-study-spotlight__content > p {
+    margin-inline: auto;
+  }
+
+  .home-study-spotlight__scout {
+    min-height: 470px;
+    order: 2;
+    border-top: 1px solid color-mix(in srgb, var(--color-secondary) 12%, var(--color-border));
+    border-right: 0;
+  }
+
+  .home-study-scout {
+    width: min(92vw, 450px);
+    height: 460px;
+    margin-bottom: -1rem;
+  }
+
+  .home-study-spotlight__scout::after {
+    top: -1px;
+    right: 15%;
+    width: 70%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-secondary) 38%, transparent), transparent);
+  }
+
+  .home-study-spotlight__points {
+    max-width: 440px;
+    margin-inline: auto;
+    text-align: left;
+  }
+
+  .home-study-spotlight__footer {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 420px) {
+  .home-study-scout {
+    width: min(108vw, 400px);
+    height: 420px;
+  }
+
+  .home-study-spotlight__scout {
+    min-height: 420px;
+  }
+
+  .home-study-spotlight__footer > a {
+    width: 100%;
+  }
+}

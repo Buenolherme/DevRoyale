@@ -1,0 +1,311 @@
+/* ── Layout consistency ── */
+.page-container {
+  @apply mx-auto max-w-6xl px-4 py-8 md:py-10;
+}
+
+.page-container.arena-page-container {
+  max-width: 88rem;
+}
+
+.section-container {
+  @apply mx-auto max-w-6xl px-4;
+}
+
+/* ── Hero typography ── */
+.hero-title {
+  font-size: clamp(3rem, 10vw, 5.5rem);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 0.95;
+  background: var(--gradient-hero-title);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(var(--shadow-hero-title));
+}
+
+.hero-slogan {
+  font-size: clamp(1.125rem, 3vw, 1.625rem);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: linear-gradient(90deg, var(--color-secondary) 0%, var(--color-secondary-light) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-gradient-gold {
+  background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-secondary-light) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-gradient-brand {
+  background: linear-gradient(135deg, var(--color-primary-hover) 0%, var(--color-secondary) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ── Scout Guerreiro ── */
+.scout-warrior-card {
+  position: relative;
+  background: var(--gradient-scout);
+  border: 1px solid rgba(214, 168, 74, 0.35);
+  box-shadow: var(--shadow-glow-gold), var(--shadow-card);
+}
+
+.scout-warrior-card::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    145deg,
+    rgba(214, 168, 74, 0.5) 0%,
+    rgba(139, 30, 30, 0.2) 50%,
+    rgba(214, 168, 74, 0.3) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ── Glass header ── */
+.glass-header {
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px) saturate(1.4);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  border-bottom: 1px solid var(--glass-border);
+  box-shadow: 0 1px 0 rgba(214, 168, 74, 0.06);
+}
+
+/* ── Card hover glow ── */
+.card-glow-hover {
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.3s ease;
+}
+
+.card-glow-hover:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-card-hover), var(--shadow-glow-gold);
+  border-color: rgba(214, 168, 74, 0.25);
+}
+
+/* ── Micro animations ── */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-fade-up-delay-1 {
+  animation-delay: 0.1s;
+}
+
+.animate-fade-up-delay-2 {
+  animation-delay: 0.2s;
+}
+
+.animate-fade-up-delay-3 {
+  animation-delay: 0.3s;
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 3s ease-in-out infinite;
+}
+
+@media (max-width: 767px) {
+  .hero-background__code-stream {
+    font-size: 0.62rem;
+  }
+
+  .hero-background__code-stream--left-near {
+    left: -30%;
+    width: 58vw;
+    opacity: 0.56;
+  }
+
+  .hero-background__code-stream--right-near {
+    right: -32%;
+    width: 58vw;
+    opacity: 0.54;
+  }
+
+  .hero-background__code-stream--left-far {
+    left: 4%;
+    width: 52vw;
+    opacity: 0.1;
+  }
+
+  .hero-background__code-stream--center-far {
+    display: none;
+  }
+
+  .hero-background__code-stream--right-mid {
+    right: 2%;
+    width: 50vw;
+    filter: blur(1.8px);
+    opacity: 0.16;
+  }
+
+  .hero-background__impact:nth-child(2),
+  .hero-background__impact:nth-child(3) {
+    display: none;
+  }
+
+  .hero-background__sparks {
+    display: none;
+  }
+
+  .hero-background__glow--red,
+  .hero-background__glow--gold {
+    width: 72vw;
+  }
+
+  .hero-scout-card {
+    min-height: 445px;
+  }
+
+  .scout-mascot--hero {
+    --scout-stage-width: min(132%, 470px);
+    --scout-stage-height: 505px;
+    --scout-stage-offset: -0.5rem;
+    --scout-bubble-margin: -0.6rem;
+  }
+
+  .scout-hero-quote {
+    top: -10%;
+    left: 46%;
+    width: min(84vw, 320px);
+    max-width: 320px;
+    transform: translateX(-50%);
+  }
+
+  .scout-hero-quote::before {
+    top: auto;
+    right: auto;
+    bottom: -20px;
+    left: 64%;
+    width: 12px;
+    height: 12px;
+    border: 1px solid rgba(214, 168, 74, 0.32);
+    border-radius: 50%;
+    clip-path: none;
+  }
+
+  .scout-hero-quote::after {
+    top: auto;
+    right: auto;
+    bottom: -35px;
+    left: calc(64% + 15px);
+    box-shadow:
+      17px 12px 0 -2px rgba(243, 210, 122, 0.62),
+      0 0 9px rgba(214, 168, 74, 0.24);
+  }
+
+  .scout-hero-glow {
+    width: min(94vw, 420px);
+    height: 46%;
+  }
+
+  .scout-mascot--panel {
+    --scout-stage-width: min(92vw, 285px);
+    --scout-stage-height: 285px;
+  }
+
+  .scout-mascot--mecanico {
+    --scout-stage-width: min(86vw, 250px);
+  }
+
+  .home-feature-card {
+    min-height: 210px;
+  }
+
+  .home-feature-card__content {
+    min-height: 210px;
+    width: 66%;
+    padding: 1.4rem 0 1.4rem 1.4rem;
+  }
+
+  .home-feature-card__visual {
+    width: 45%;
+  }
+
+  .home-feature-card__visual--photo {
+    width: 47%;
+  }
+}
+
+@media (max-width: 380px) {
+  .scout-mascot--hero {
+    --scout-stage-width: min(119%, 355px);
+    --scout-stage-height: 465px;
+    --scout-bubble-margin: -0.5rem;
+  }
+
+  .home-feature-card__content {
+    width: 70%;
+    padding-left: 1.2rem;
+  }
+
+  .home-feature-card__cta {
+    margin-top: 0.9rem;
+    font-size: 0.66rem;
+  }
+
+  .home-feature-card__visual {
+    right: -4%;
+    width: 46%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-background__code-track,
+  .hero-background__glow,
+  .hero-background__spark,
+  .hero-background__impact-flash,
+  .hero-background__impact-ring,
+  .hero-background__impact-particle,
+  .scout-mascot__halo {
+    animation: none;
+  }
+
+  .scout-mascot--hero .scout-mascot__stage::before {
+    animation: none;
+    opacity: 0.78;
+  }
+
+  .scout-hero-sparks span,
+  .scout-hero-sparks::before,
+  .scout-hero-sparks::after,
+  .scout-hero-ambient-particles span {
+    animation: none;
+    opacity: 0.35;
+  }
+
+  .home-feature-card__image,
+  .home-feature-card__accent,
+  .home-feature-card__cta span {
+    transition: none;
+  }
+}

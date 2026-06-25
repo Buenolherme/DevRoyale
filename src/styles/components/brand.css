@@ -1,0 +1,72 @@
+/* ── Marca DevRoyale ── */
+.brand-logo__symbol {
+  isolation: isolate;
+  transition: transform 220ms ease, filter 220ms ease;
+}
+
+.brand-logo__symbol::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  width: 115%;
+  height: 86%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, rgba(224, 169, 54, 0.18) 0%, rgba(154, 53, 29, 0.07) 44%, transparent 72%);
+  filter: blur(5px);
+  opacity: 0.72;
+  pointer-events: none;
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+
+.brand-logo:hover .brand-logo__symbol {
+  filter: saturate(1.06) brightness(1.03);
+  transform: translateY(-1px) scale(1.025);
+}
+
+.brand-logo:hover .brand-logo__symbol::before {
+  opacity: 0.9;
+  transform: scale(1.05);
+}
+
+.brand-logo__wordmark {
+  letter-spacing: -0.045em;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.3);
+  transition: filter 220ms ease;
+}
+
+.brand-logo__dev {
+  color: var(--color-text);
+}
+
+.brand-logo__royale {
+  background: linear-gradient(112deg, #f5d77f 4%, #d6a84a 48%, #efc867 76%, #b97322 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+.brand-logo:hover .brand-logo__wordmark {
+  filter: brightness(1.055);
+}
+
+.profile-eyebrow {
+  color: var(--color-secondary);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 767px) {
+  .profile-identity-card__layout {
+    grid-template-columns: 1fr;
+    justify-items: start;
+  }
+
+  .profile-avatar {
+    width: 5.4rem;
+    height: 5.4rem;
+  }
+}

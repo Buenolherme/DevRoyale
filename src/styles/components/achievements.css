@@ -1,0 +1,218 @@
+/* ── Insígnias de conquistas ── */
+.achievement-insignia {
+  --achievement-accent: #94a3b8;
+  --achievement-soft: rgba(148, 163, 184, 0.1);
+  --achievement-glow: rgba(148, 163, 184, 0.08);
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--achievement-accent) 34%, var(--color-border));
+  border-radius: 0.9rem;
+  background:
+    linear-gradient(145deg, var(--achievement-soft), transparent 52%),
+    color-mix(in srgb, var(--color-bg-elevated) 92%, var(--achievement-soft));
+  padding: 1rem;
+  box-shadow: 0 12px 30px -24px var(--achievement-glow);
+  transition: border-color 180ms ease, box-shadow 180ms ease, opacity 180ms ease;
+}
+
+.achievement-insignia::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--achievement-accent), transparent);
+  opacity: 0.75;
+}
+
+.achievement-insignia--rare {
+  --achievement-accent: #5b9fe9;
+  --achievement-soft: rgba(59, 130, 246, 0.1);
+  --achievement-glow: rgba(91, 159, 233, 0.2);
+}
+
+.achievement-insignia--epic {
+  --achievement-accent: #a878e8;
+  --achievement-soft: rgba(126, 76, 190, 0.12);
+  --achievement-glow: rgba(168, 120, 232, 0.22);
+}
+
+.achievement-insignia--legendary {
+  --achievement-accent: var(--color-secondary);
+  --achievement-soft: color-mix(in srgb, var(--color-primary-muted) 54%, var(--color-secondary-muted));
+  --achievement-glow: rgba(214, 168, 74, 0.24);
+}
+
+.achievement-insignia.is-unlocked {
+  box-shadow:
+    0 14px 30px -22px var(--achievement-glow),
+    0 0 18px -16px var(--achievement-accent),
+    inset 0 1px color-mix(in srgb, var(--achievement-accent) 12%, transparent);
+}
+
+.achievement-insignia.is-locked {
+  opacity: 0.72;
+  filter: grayscale(1) saturate(0);
+  border-color: var(--color-border);
+  background: var(--color-bg-secondary);
+  box-shadow: none;
+}
+
+.achievement-insignia__topline,
+.achievement-insignia__requirement-copy {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.achievement-insignia__seal {
+  position: relative;
+  display: grid;
+  width: 3.25rem;
+  height: 3.25rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--achievement-accent) 55%, var(--color-border));
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 28%, color-mix(in srgb, var(--achievement-accent) 26%, transparent), transparent 45%),
+    var(--color-bg-secondary);
+  color: var(--achievement-accent);
+  box-shadow: inset 0 0 0 4px var(--color-bg-elevated);
+}
+
+.achievement-insignia__seal::after {
+  content: '';
+  position: absolute;
+  inset: 0.32rem;
+  border: 1px solid color-mix(in srgb, var(--achievement-accent) 24%, transparent);
+  border-radius: inherit;
+}
+
+.achievement-insignia__seal span {
+  position: relative;
+  z-index: 1;
+  font-size: 0.86rem;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+}
+
+.achievement-insignia__labels {
+  display: grid;
+  justify-items: end;
+  gap: 0.35rem;
+}
+
+.achievement-insignia__rarity,
+.achievement-insignia__status {
+  border: 1px solid color-mix(in srgb, var(--achievement-accent) 34%, var(--color-border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--achievement-soft) 72%, transparent);
+  padding: 0.2rem 0.55rem;
+  color: var(--achievement-accent);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.achievement-insignia__status {
+  border-color: var(--color-border);
+  background: var(--color-bg-secondary);
+  color: var(--color-text-muted);
+  font-size: 0.57rem;
+}
+
+.achievement-insignia__content {
+  margin-top: 1rem;
+}
+
+.achievement-insignia__content h3 {
+  color: var(--color-text);
+  font-size: 0.98rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.achievement-insignia__content p {
+  margin-top: 0.38rem;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  line-height: 1.55;
+}
+
+.achievement-insignia__date,
+.achievement-insignia__requirement {
+  margin-top: 1rem;
+  border-top: 1px solid var(--color-border);
+  padding-top: 0.78rem;
+}
+
+.achievement-insignia__date {
+  color: var(--color-text-muted);
+  font-size: 0.67rem;
+}
+
+.achievement-insignia__date strong {
+  color: var(--achievement-accent);
+}
+
+.achievement-insignia__requirement-copy {
+  color: var(--color-text-muted);
+  font-size: 0.66rem;
+}
+
+.achievement-insignia__requirement-copy span {
+  min-width: 0;
+}
+
+.achievement-insignia__requirement-copy strong {
+  flex: 0 0 auto;
+  color: var(--color-text);
+}
+
+.achievement-insignia__progress {
+  height: 0.35rem;
+  margin-top: 0.55rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--color-bg-subtle);
+}
+
+.achievement-insignia__progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--achievement-accent), var(--color-secondary));
+}
+
+.achievement-insignia.is-compact {
+  padding: 0.85rem;
+}
+
+.achievement-insignia.is-compact .achievement-insignia__seal {
+  width: 2.85rem;
+  height: 2.85rem;
+}
+
+.achievement-insignia.is-compact .achievement-insignia__content {
+  margin-top: 0.75rem;
+}
+
+.achievement-insignia.is-compact .achievement-insignia__date,
+.achievement-insignia.is-compact .achievement-insignia__requirement {
+  margin-top: 0.75rem;
+  padding-top: 0.65rem;
+}
+
+@media (max-width: 480px) {
+  .achievement-insignia__topline {
+    align-items: flex-start;
+  }
+
+  .achievement-insignia__labels {
+    justify-items: start;
+  }
+}

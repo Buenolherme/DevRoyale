@@ -1,0 +1,259 @@
+/* ── Recomendação do Scout Mecânico na Bug Arena ── */
+.bug-scout-recommendation {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: 0;
+  border-color: color-mix(in srgb, var(--color-secondary) 28%, var(--color-border));
+  background:
+    radial-gradient(circle at 12% 42%, rgba(214, 168, 74, 0.14), transparent 28%),
+    radial-gradient(circle at 82% 0%, rgba(139, 30, 30, 0.17), transparent 34%),
+    linear-gradient(135deg, rgba(27, 27, 30, 0.98), rgba(12, 12, 14, 0.99));
+}
+
+.bug-scout-recommendation::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(214, 168, 74, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(214, 168, 74, 0.035) 1px, transparent 1px);
+  background-size: 28px 28px;
+  mask-image: linear-gradient(90deg, black, transparent 78%);
+  pointer-events: none;
+}
+
+.bug-scout-recommendation::after {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--color-secondary), var(--color-primary), transparent);
+  opacity: 0.72;
+  pointer-events: none;
+}
+
+.bug-scout-recommendation__layout {
+  display: grid;
+  grid-template-columns: 170px minmax(0, 1fr) minmax(260px, 300px);
+  align-items: center;
+  min-height: 220px;
+}
+
+.bug-scout-recommendation__visual {
+  position: relative;
+  align-self: stretch;
+  display: flex;
+  grid-row: 1 / span 2;
+  align-items: flex-end;
+  justify-content: center;
+  min-width: 0;
+  overflow: hidden;
+  border-right: 1px solid rgba(214, 168, 74, 0.12);
+}
+
+.bug-scout-recommendation__visual::before {
+  content: '';
+  position: absolute;
+  inset: 18% 2% 4%;
+  border-radius: 48%;
+  background:
+    radial-gradient(circle at 48% 38%, rgba(214, 168, 74, 0.2), transparent 45%),
+    radial-gradient(ellipse at 52% 82%, rgba(139, 30, 30, 0.2), transparent 63%);
+  filter: blur(16px);
+  opacity: 0.88;
+}
+
+.bug-scout-recommendation__scout {
+  width: 180px;
+  height: 218px;
+  margin-bottom: -4px;
+}
+
+.bug-scout-recommendation__scout .scout-image {
+  object-position: center bottom;
+  filter:
+    drop-shadow(0 20px 22px rgba(0, 0, 0, 0.5))
+    drop-shadow(0 0 13px rgba(214, 168, 74, 0.1))
+    saturate(1.04)
+    contrast(1.025);
+}
+
+.bug-scout-recommendation__bolt {
+  position: absolute;
+  z-index: 2;
+  left: 16px;
+  width: 7px;
+  height: 7px;
+  border: 1px solid rgba(214, 168, 74, 0.55);
+  border-radius: 50%;
+  background: rgba(214, 168, 74, 0.15);
+  box-shadow: 0 0 9px rgba(214, 168, 74, 0.2);
+}
+
+.bug-scout-recommendation__bolt--top {
+  top: 16px;
+}
+
+.bug-scout-recommendation__bolt--bottom {
+  bottom: 16px;
+}
+
+.bug-scout-recommendation__content {
+  min-width: 0;
+  padding: 1.4rem clamp(1.25rem, 2.4vw, 2rem);
+}
+
+.bug-scout-recommendation__category {
+  border: 1px solid color-mix(in srgb, var(--color-primary) 28%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-primary-muted) 68%, transparent);
+  padding: 0.3rem 0.7rem;
+  color: var(--color-primary-light, var(--color-primary));
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.bug-scout-recommendation__actions {
+  display: grid;
+  align-self: stretch;
+  align-content: center;
+  gap: 0.55rem;
+  border-left: 1px solid rgba(214, 168, 74, 0.12);
+  background: rgba(4, 4, 6, 0.2);
+  padding: 1.25rem;
+}
+
+.bug-scout-recommendation__actions-title {
+  margin-bottom: 0.2rem;
+  color: var(--color-text-muted);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.bug-scout-recommendation__actions button[aria-pressed='true'] {
+  border-color: color-mix(in srgb, var(--color-secondary) 68%, transparent);
+  box-shadow: 0 0 0 2px rgba(214, 168, 74, 0.1), var(--shadow-glow-gold);
+}
+
+.bug-scout-recommendation__feedback {
+  grid-column: 2 / -1;
+  margin: 0 1.25rem 1.15rem;
+  border: 1px solid rgba(214, 168, 74, 0.2);
+  border-radius: 0.85rem;
+  background: rgba(214, 168, 74, 0.07);
+  padding: 0.8rem 1rem;
+  color: var(--color-text);
+  font-size: 0.85rem;
+  font-weight: 650;
+}
+
+.bug-challenge-card {
+  padding: 1.25rem;
+}
+
+.bug-code-editor {
+  min-width: 0;
+  tab-size: 2;
+}
+
+.bug-code-editor--small {
+  min-height: 360px;
+}
+
+.bug-code-editor--medium {
+  min-height: 480px;
+}
+
+.bug-code-editor--large {
+  min-height: 600px;
+}
+
+@media (max-width: 1180px) {
+  .bug-scout-recommendation__layout {
+    grid-template-columns: 160px minmax(0, 1fr);
+  }
+
+  .bug-scout-recommendation__visual {
+    grid-row: 1 / span 3;
+  }
+
+  .bug-scout-recommendation__actions {
+    grid-column: 2;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    border-top: 1px solid rgba(214, 168, 74, 0.12);
+    border-left: 0;
+    padding: 1.25rem 1.5rem;
+  }
+
+  .bug-scout-recommendation__actions-title {
+    grid-column: 1 / -1;
+  }
+
+  .bug-scout-recommendation__feedback {
+    grid-column: 2;
+    margin: 0 1.5rem 1.35rem;
+  }
+}
+
+@media (max-width: 720px) {
+  .bug-scout-recommendation__layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .bug-scout-recommendation__visual {
+    grid-row: auto;
+    min-height: 175px;
+    border-right: 0;
+    border-bottom: 1px solid rgba(214, 168, 74, 0.12);
+  }
+
+  .bug-scout-recommendation__scout {
+    width: 165px;
+    height: 185px;
+  }
+
+  .bug-scout-recommendation__content {
+    padding: 1.4rem 1.2rem;
+  }
+
+  .bug-scout-recommendation__actions {
+    grid-column: 1;
+    padding: 1.2rem;
+  }
+
+  .bug-scout-recommendation__feedback {
+    grid-column: 1;
+    margin: 0 1.2rem 1.2rem;
+  }
+}
+
+@media (max-width: 639px) {
+  .bug-code-editor--small {
+    min-height: 300px;
+  }
+
+  .bug-code-editor--medium {
+    min-height: 360px;
+  }
+
+  .bug-code-editor--large {
+    min-height: 440px;
+  }
+}
+
+@media (max-width: 460px) {
+  .bug-scout-recommendation__actions {
+    grid-template-columns: 1fr;
+  }
+
+  .bug-scout-recommendation__actions-title {
+    grid-column: auto;
+  }
+}

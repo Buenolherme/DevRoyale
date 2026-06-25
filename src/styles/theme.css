@@ -1,0 +1,89 @@
+/* DevRoyale V1.0 — Identidade Visual (Etapa 2.8) */
+
+:root,
+[data-theme='light'] {
+  --color-bg: #f4f7fb;
+  --color-bg-secondary: #f5f7fa;
+  --color-bg-elevated: #ffffff;
+  --color-bg-subtle: #e8edf3;
+  --color-text: #151515;
+  --color-text-muted: #64748b;
+  --color-border: rgba(21, 35, 55, 0.08);
+  --color-border-strong: rgba(21, 35, 55, 0.13);
+  --color-primary: #c83232;
+  --color-primary-hover: #8b1e1e;
+  --color-primary-muted: rgba(200, 50, 50, 0.08);
+  --color-secondary: #d6a84a;
+  --color-secondary-light: #f3d27a;
+  --color-secondary-muted: rgba(214, 168, 74, 0.12);
+  --color-success: #16a34a;
+  --color-success-muted: rgba(22, 163, 74, 0.09);
+  --color-warning: #ca8a04;
+  --color-warning-muted: rgba(202, 138, 4, 0.09);
+  --color-danger: #c83232;
+  --color-danger-muted: rgba(200, 50, 50, 0.09);
+  --color-online: #16a34a;
+  --shadow-card: 0 1px 2px rgba(21, 35, 55, 0.04), 0 4px 20px rgba(21, 35, 55, 0.07);
+  --shadow-card-hover: 0 4px 8px rgba(21, 35, 55, 0.06), 0 14px 36px rgba(21, 35, 55, 0.1);
+  --shadow-glow-primary: 0 0 20px rgba(200, 50, 50, 0.1);
+  --shadow-glow-gold: 0 0 24px rgba(214, 168, 74, 0.16);
+  --shadow-hero-title: 0 2px 14px rgba(214, 168, 74, 0.18);
+  --gradient-hero: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(100, 140, 200, 0.08) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 50% at 100% 50%, rgba(214, 168, 74, 0.06) 0%, transparent 50%),
+    linear-gradient(180deg, #f5f7fa 0%, #f4f7fb 100%);
+  --gradient-scout: radial-gradient(ellipse 70% 60% at 50% 0%, rgba(214, 168, 74, 0.1) 0%, transparent 60%),
+    linear-gradient(165deg, #ffffff 0%, #f5f7fa 45%, rgba(200, 50, 50, 0.02) 100%);
+  --gradient-mesh: radial-gradient(ellipse 50% 40% at 20% 20%, rgba(100, 140, 200, 0.07) 0%, transparent 50%),
+    radial-gradient(ellipse 40% 30% at 80% 80%, rgba(214, 168, 74, 0.05) 0%, transparent 50%);
+  --gradient-hero-title: linear-gradient(135deg, #8b1e1e 0%, #c83232 35%, #d6a84a 70%, #f3d27a 100%);
+  --hero-code-color: rgba(82, 96, 118, 0.2);
+  --hero-red-glow: rgba(200, 50, 50, 0.1);
+  --hero-gold-glow: rgba(214, 168, 74, 0.13);
+  --hero-spark-color: rgba(160, 112, 26, 0.42);
+  --glass-bg: rgba(244, 247, 251, 0.82);
+  --glass-border: rgba(21, 35, 55, 0.07);
+}
+
+[data-theme='dark'] {
+  --color-bg: #0f0f12;
+  --color-bg-secondary: #141418;
+  --color-bg-elevated: #1a1a20;
+  --color-bg-subtle: #18181d;
+  --color-text: #f5f5f5;
+  --color-text-muted: #a1a1aa;
+  --color-border: rgba(245, 245, 245, 0.07);
+  --color-border-strong: rgba(245, 245, 245, 0.12);
+  --color-primary: #8b1e1e;
+  --color-primary-hover: #c83232;
+  --color-primary-muted: rgba(139, 30, 30, 0.2);
+  --color-secondary: #d6a84a;
+  --color-secondary-light: #f3d27a;
+  --color-secondary-muted: rgba(214, 168, 74, 0.12);
+  --color-success: #22c55e;
+  --color-success-muted: rgba(34, 197, 94, 0.12);
+  --color-warning: #f3d27a;
+  --color-warning-muted: rgba(243, 210, 122, 0.1);
+  --color-danger: #c83232;
+  --color-danger-muted: rgba(200, 50, 50, 0.15);
+  --color-online: #22c55e;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.2), 0 4px 20px rgba(0, 0, 0, 0.35);
+  --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.3), 0 16px 40px rgba(0, 0, 0, 0.45);
+  --shadow-glow-primary: 0 0 28px rgba(139, 30, 30, 0.25);
+  --shadow-glow-gold: 0 0 32px rgba(214, 168, 74, 0.15);
+  --shadow-hero-title: 0 4px 24px rgba(214, 168, 74, 0.15);
+  --gradient-hero: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(139, 30, 30, 0.15) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 40% at 90% 60%, rgba(214, 168, 74, 0.06) 0%, transparent 50%),
+    linear-gradient(180deg, #0f0f12 0%, #141418 100%);
+  --gradient-scout: radial-gradient(ellipse 80% 70% at 50% -5%, rgba(214, 168, 74, 0.1) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 40% at 100% 100%, rgba(139, 30, 30, 0.12) 0%, transparent 50%),
+    linear-gradient(165deg, #18181d 0%, #141418 50%, #0f0f12 100%);
+  --gradient-mesh: radial-gradient(ellipse 45% 35% at 15% 25%, rgba(139, 30, 30, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse 35% 25% at 85% 75%, rgba(214, 168, 74, 0.05) 0%, transparent 50%);
+  --gradient-hero-title: linear-gradient(135deg, #f3d27a 0%, #d6a84a 30%, #c83232 65%, #8b1e1e 100%);
+  --hero-code-color: rgba(216, 220, 228, 0.13);
+  --hero-red-glow: rgba(139, 30, 30, 0.18);
+  --hero-gold-glow: rgba(214, 168, 74, 0.1);
+  --hero-spark-color: rgba(243, 210, 122, 0.45);
+  --glass-bg: rgba(15, 15, 18, 0.8);
+  --glass-border: rgba(245, 245, 245, 0.06);
+}
