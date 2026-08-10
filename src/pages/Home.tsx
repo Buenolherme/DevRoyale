@@ -1,12 +1,10 @@
 import { Link } from 'react-router-dom'
 import scoutHomeImage from '@/assets/scout/scout-home.png'
-import scoutMecanicoImage from '@/assets/scout/scout-mecanico.png'
-import scoutProfessorImage from '@/assets/scout/scout-professor.png'
 import {
   HomeFeatureCard,
   type HomeFeatureCardData,
 } from '@/components/home/HomeFeatureCard'
-import { HeroBackground, ScoutImage, ScoutWarriorPlaceholder } from '@/components/layout'
+import { HeroBackground, ScoutWarriorPlaceholder } from '@/components/layout'
 import { Badge, getButtonClassName } from '@/components/ui'
 import { ROUTES } from '@/routes/paths'
 
@@ -14,40 +12,38 @@ const featureCards: HomeFeatureCardData[] = [
   {
     image: scoutHomeImage,
     title: 'Batalha de Devs',
-    description: 'Enfrente desafios de código e prove suas habilidades na arena.',
-    ctaLabel: 'Batalhar',
+    description: 'Entre em duelos de código, resolva desafios e prove sua evolução na arena.',
+    ctaLabel: 'Entrar na Batalha',
     mode: 'battle',
     to: ROUTES.BATALHA_DEVS,
     accent: 'primary',
     visual: 'scout',
     imageClassName: 'home-feature-card__image--warrior',
+    featured: true,
+    eyebrow: 'Modo principal',
   },
   {
-    image: scoutProfessorImage,
-    title: 'Área dos Estudos',
-    description: 'Trilhas estruturadas para evoluir do básico ao avançado.',
-    ctaLabel: 'Estudar',
-    mode: 'studies',
-    to: ROUTES.AREA_ESTUDOS,
-    accent: 'gold',
-    visual: 'scout',
-    imageClassName: 'home-feature-card__image--professor',
-  },
-  {
-    image: scoutMecanicoImage,
     title: 'Bug Arena',
-    description: 'Caçe e corrija bugs em trechos de código reais.',
-    ctaLabel: 'Corrigir bugs',
+    description: 'Treine corrigindo códigos quebrados antes de entrar em batalhas mais difíceis.',
+    ctaLabel: 'Treinar agora',
     mode: 'bug',
     to: ROUTES.BUG_ARENA,
     accent: 'primary',
-    visual: 'scout',
-    imageClassName: 'home-feature-card__image--mechanic',
+    visual: 'icon',
+  },
+  {
+    title: 'Treinamento de Devs',
+    description: 'Reforce lógica, linguagens e fundamentos para chegar mais preparado aos duelos.',
+    ctaLabel: 'Reforçar fundamentos',
+    mode: 'studies',
+    to: ROUTES.AREA_ESTUDOS,
+    accent: 'gold',
+    visual: 'icon',
   },
   {
     title: 'Interview Mode',
-    description: 'Pratique perguntas técnicas para entrevistas de emprego.',
-    ctaLabel: 'Treinar entrevista',
+    description: 'Pratique perguntas técnicas e fortaleça sua confiança como desenvolvedor.',
+    ctaLabel: 'Praticar entrevista',
     mode: 'interview',
     to: ROUTES.INTERVIEW_MODE,
     accent: 'gold',
@@ -65,7 +61,7 @@ export function HomePage() {
           <div className="text-center lg:text-left">
             <div className="animate-fade-up">
               <Badge variant="gold" className="mb-5 normal-case tracking-wide">
-                Arena Competitiva · V1.0
+                Arena competitiva · V1.5A
               </Badge>
             </div>
 
@@ -74,13 +70,12 @@ export function HomePage() {
             </h1>
 
             <p className="hero-slogan mt-4 animate-fade-up animate-fade-up-delay-2 md:mt-5">
-              Estude. Batalhe. Evolua. Reine.
+              A arena onde devs evoluem batalhando.
             </p>
 
             <p className="animate-fade-up animate-fade-up-delay-2 mx-auto mt-5 max-w-xl text-base leading-relaxed text-muted lg:mx-0 lg:mt-6 lg:text-lg">
-              Transforme programação em diversão. Entre em batalhas de código, pratique
-              desafios, corrija bugs e evolua como dev em uma arena feita para quem quer
-              competir e aprender.
+              Resolva desafios, enfrente duelos de código, suba de nível e prepare-se para
+              o modo ranked.
             </p>
 
             <div className="animate-fade-up animate-fade-up-delay-3 mt-8 flex flex-col justify-center gap-3 sm:flex-row lg:mt-10 lg:justify-start lg:gap-4">
@@ -91,14 +86,14 @@ export function HomePage() {
                 Entrar na Batalha
               </Link>
               <Link
-                to={ROUTES.AREA_ESTUDOS}
+                to={ROUTES.BUG_ARENA}
                 className={getButtonClassName({
-                  variant: 'gold',
+                  variant: 'secondary',
                   size: 'lg',
                   className: 'rounded-xl',
                 })}
               >
-                Começar Estudos
+                Treinar na Bug Arena
               </Link>
             </div>
           </div>
@@ -109,91 +104,50 @@ export function HomePage() {
         </div>
       </section>
 
-      <section className="home-study-section border-b border-border">
-        <div className="section-container py-16 md:py-20 lg:py-24">
-          <div className="home-study-spotlight">
-            <div className="home-study-spotlight__scout" aria-label="Scout Professor">
-              <div className="home-study-spotlight__scout-glow" aria-hidden="true" />
-              <ScoutImage
-                src={scoutProfessorImage}
-                alt="Scout Professor"
-                className="home-study-scout"
-              />
-            </div>
-
-            <div className="home-study-spotlight__content">
-              <Badge variant="gold" className="normal-case tracking-normal">
-                Aprendizado opcional
-              </Badge>
-              <h2>Aprenda com o Scout Professor</h2>
-              <p>
-                Entre na Área dos Estudos quando quiser evoluir com mais direção. Escolha
-                uma linguagem, selecione seu nível e siga trilhas guiadas pelo Scout
-                Professor. Nada é obrigatório: você pode batalhar, corrigir bugs ou estudar
-                no seu ritmo.
-              </p>
-
-              <div className="home-study-spotlight__points" aria-label="Como funciona">
-                <div>
-                  <span>01</span>
-                  <p><strong>Escolha seu foco</strong>Tema e nível definidos por você.</p>
-                </div>
-                <div>
-                  <span>02</span>
-                  <p><strong>Siga uma trilha</strong>Explicações e prática guiada.</p>
-                </div>
-                <div>
-                  <span>03</span>
-                  <p><strong>Evolua com contexto</strong>Histórico para recomendações futuras.</p>
-                </div>
-              </div>
-
-              <div className="home-study-spotlight__footer">
-                <Link
-                  to={ROUTES.AREA_ESTUDOS}
-                  className={getButtonClassName({
-                    variant: 'gold',
-                    size: 'lg',
-                    className: 'rounded-xl',
-                  })}
-                >
-                  ESTUDAR
-                </Link>
-                <p>Batalha e Bug Arena continuam sempre abertas.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="border-b border-border bg-background-secondary/55">
-        <div className="section-container py-10 text-center md:py-12">
-          <p className="text-sm leading-relaxed text-muted">
-            DevRoyale V1.0 é{' '}
-            <strong className="font-semibold text-secondary">totalmente gratuita</strong> —
-            explore cada modo na ordem que fizer sentido para você.
-          </p>
-        </div>
-      </section>
-
-      <section className="home-arena-section">
+      <section className="home-arena-section border-b border-border">
         <div className="section-container py-16 md:py-20 lg:py-24">
           <div className="mb-10 text-center md:mb-12">
             <Badge variant="gold" className="mb-4 normal-case tracking-normal">
-              Todos os modos estão liberados
+              A batalha vem primeiro
             </Badge>
             <h2 className="text-2xl font-black tracking-tight text-foreground md:text-3xl">
-              Escolha sua <span className="text-gradient-brand">arena</span>
+              Entre para <span className="text-gradient-brand">competir</span>. Treine para avançar.
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-muted">
-              Quatro caminhos para treinar, competir e evoluir — todos disponíveis na V1.0.
+              A Batalha de Devs é o centro da arena. Use os outros modos para fortalecer sua
+              performance e chegar mais preparado aos próximos duelos.
             </p>
           </div>
 
-          <div className="grid gap-5 sm:grid-cols-2 md:gap-6">
+          <div className="home-mode-grid">
             {featureCards.map((card) => (
               <HomeFeatureCard key={card.to} card={card} />
             ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="home-training-section">
+        <div className="section-container py-10 md:py-12">
+          <div className="home-training-support">
+            <div>
+              <span className="home-training-support__label">Preparação para a arena</span>
+              <h2>Fortaleça sua base entre uma batalha e outra.</h2>
+              <p>
+                Treinamento de Devs funciona como apoio: revise lógica, linguagens e
+                fundamentos sem perder de vista seu próximo duelo.
+              </p>
+            </div>
+            <Link
+              to={ROUTES.AREA_ESTUDOS}
+              className={getButtonClassName({
+                variant: 'secondary',
+                size: 'lg',
+                className: 'rounded-xl',
+              })}
+            >
+              Acessar treinamento
+            </Link>
           </div>
         </div>
       </section>

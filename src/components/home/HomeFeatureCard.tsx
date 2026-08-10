@@ -12,6 +12,8 @@ import { cn } from '@/utils'
 export interface HomeFeatureCardData {
   accent: 'gold' | 'primary'
   description: string
+  eyebrow?: string
+  featured?: boolean
   image?: string
   imageClassName?: string
   ctaLabel: string
@@ -27,15 +29,28 @@ interface HomeFeatureCardProps {
 
 export function HomeFeatureCard({ card }: HomeFeatureCardProps) {
   return (
-    <Link to={card.to} className="group focus-ring rounded-2xl">
+    <Link
+      to={card.to}
+      className={cn(
+        'home-feature-card-link group focus-ring rounded-2xl',
+        card.featured && 'home-feature-card-link--featured',
+      )}
+    >
       <Card
         hoverable
         variant="premium"
-        className={cn('home-feature-card h-full', `home-feature-card--${card.accent}`)}
+        className={cn(
+          'home-feature-card h-full',
+          `home-feature-card--${card.accent}`,
+          card.featured && 'home-feature-card--featured',
+        )}
       >
         <div className="home-feature-card__accent" aria-hidden="true" />
 
         <CardHeader className="home-feature-card__content">
+          {card.eyebrow && (
+            <span className="home-feature-card__eyebrow">{card.eyebrow}</span>
+          )}
           <div className="home-feature-card__title-row">
             <span className="home-feature-card__mode-icon" aria-hidden="true">
               <ModeIcon mode={card.mode} />

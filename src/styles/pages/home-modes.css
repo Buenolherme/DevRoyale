@@ -1,4 +1,9 @@
 /* ── Cards principais da Home ── */
+.home-feature-card-link {
+  display: block;
+  min-width: 0;
+}
+
 .home-feature-card {
   position: relative;
   min-height: 225px;
@@ -44,6 +49,32 @@
   --feature-card-glow: color-mix(in srgb, var(--color-secondary) 18%, transparent);
 }
 
+.home-feature-card.home-feature-card--featured {
+  min-height: 285px;
+  border-color: color-mix(in srgb, var(--color-primary-hover) 34%, var(--color-border));
+  box-shadow:
+    var(--shadow-card),
+    0 0 42px color-mix(in srgb, var(--color-primary) 9%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.home-feature-card--featured::before {
+  background:
+    radial-gradient(circle at 12% 16%, rgba(255, 255, 255, 0.035), transparent 30%),
+    linear-gradient(108deg, var(--color-bg-elevated) 0%, var(--color-bg-elevated) 58%, transparent 79%),
+    radial-gradient(circle at 86% 28%, color-mix(in srgb, var(--color-primary) 24%, transparent), transparent 55%),
+    radial-gradient(circle at 92% 88%, color-mix(in srgb, var(--color-secondary) 11%, transparent), transparent 42%);
+}
+
+.home-feature-card--featured::after {
+  background: linear-gradient(
+    90deg,
+    var(--color-bg-elevated) 0%,
+    color-mix(in srgb, var(--color-bg-elevated) 97%, transparent) 52%,
+    transparent 78%
+  );
+}
+
 .home-feature-card__accent {
   position: absolute;
   inset: 1.4rem auto 1.4rem 0;
@@ -64,6 +95,46 @@
   flex-direction: column;
   justify-content: center;
   padding: 1.6rem 0 1.6rem 1.75rem;
+}
+
+.home-feature-card--featured .home-feature-card__content {
+  min-height: 285px;
+  width: 61%;
+  padding-block: 2rem;
+  padding-left: clamp(1.75rem, 5vw, 3rem);
+}
+
+.home-feature-card__eyebrow {
+  margin-bottom: 0.75rem;
+  color: var(--color-primary-hover);
+  font-size: 0.65rem;
+  font-weight: 900;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.home-feature-card--featured .home-feature-card__title-row h3 {
+  font-size: clamp(1.55rem, 4vw, 2.15rem);
+}
+
+.home-feature-card--featured .home-feature-card__title-row {
+  gap: 0.85rem;
+}
+
+.home-feature-card--featured .home-feature-card__mode-icon {
+  width: 2.65rem;
+  height: 2.65rem;
+}
+
+.home-feature-card--featured .home-feature-card__mode-icon .mode-icon {
+  width: 1.4rem;
+  height: 1.4rem;
+}
+
+.home-feature-card--featured .home-feature-card__content > p {
+  max-width: 31rem;
+  font-size: 0.98rem;
+  line-height: 1.7;
 }
 
 .home-feature-card__cta {
@@ -92,6 +163,14 @@
   bottom: 0;
   width: 47%;
   pointer-events: none;
+}
+
+.home-feature-card--featured .home-feature-card__visual {
+  width: 43%;
+}
+
+.home-feature-card--featured .home-feature-card__image--warrior {
+  transform: translate(3%, 6%) scale(1.13);
 }
 
 .home-feature-card__visual--scout::before {
@@ -244,6 +323,10 @@
   transform: translate(7%, 4%) scale(1.17);
 }
 
+.group:hover .home-feature-card--featured .home-feature-card__image--warrior {
+  transform: translate(3%, 3%) scale(1.17);
+}
+
 .group:hover .home-feature-card__image--professor {
   transform: translate(5%, 6%) scale(1.16);
 }
@@ -260,6 +343,50 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.05),
     inset 0 -18px 34px rgba(0, 0, 0, 0.25);
   transform: rotate(0deg) scale(1.035);
+}
+
+@media (min-width: 900px) {
+  .home-feature-card-link:not(.home-feature-card-link--featured) .home-feature-card,
+  .home-feature-card-link:not(.home-feature-card-link--featured) .home-feature-card__content {
+    min-height: 255px;
+  }
+
+  .home-feature-card-link:not(.home-feature-card-link--featured) .home-feature-card__content {
+    width: 72%;
+    padding-right: 0.5rem;
+  }
+
+  .home-feature-card-link:not(.home-feature-card-link--featured) .home-feature-card__visual {
+    right: -3%;
+    width: 40%;
+    opacity: 0.72;
+  }
+
+  .home-feature-card-link:not(.home-feature-card-link--featured) .home-feature-card__mode-emblem {
+    transform: scale(0.82);
+  }
+}
+
+@media (max-width: 520px) {
+  .home-feature-card.home-feature-card--featured,
+  .home-feature-card--featured .home-feature-card__content {
+    min-height: 265px;
+  }
+
+  .home-feature-card--featured .home-feature-card__content {
+    width: 69%;
+    padding-left: 1.3rem;
+  }
+
+  .home-feature-card--featured .home-feature-card__visual {
+    right: -5%;
+    width: 45%;
+  }
+
+  .home-feature-card--featured .home-feature-card__content > p {
+    font-size: 0.88rem;
+    line-height: 1.55;
+  }
 }
 
 .scout-free-panel,
