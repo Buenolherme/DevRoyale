@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ChangeEvent } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
 import {
   BattleCountdown,
   BattleEditor,
@@ -20,7 +20,7 @@ import {
 import { mockBattleChallenges } from '@/data/mockBattleChallenges'
 import { useAuth } from '@/hooks'
 import type { BattleDifficulty, BattleLanguage } from '@/types'
-import { addXP, validateBattleAnswer } from '@/utils'
+import { addXP, validateBattleSolution } from '@/utils'
 
 const languageLabel: Record<BattleLanguage, string> = {
   python: 'Python',
@@ -143,7 +143,8 @@ export function BatalhaDevsPage() {
   const [language, setLanguage] = useState<BattleLanguage>(initialLanguage)
   const [difficulty, setDifficulty] = useState<BattleDifficulty>(initialDifficulty)
   const [challengeId, setChallengeId] = useState(initialChallenge.id)
-  const [code, setCode] = useState(initialChallenge.starterCode)
+  const [code, setCode] = useState('')
+  const codeRef = useRef('')
   const [result, setResult] = useState<BattleResult | null>(null)
   const [isHintVisible, setIsHintVisible] = useState(false)
   const [battlePhase, setBattlePhase] = useState<BattlePhase>('preparing')
@@ -267,11 +268,9 @@ export function BatalhaDevsPage() {
     }
   }, [battlePhase, countdownValue])
 
-  const resetBattleState = (
-    starterCode: string,
-    nextDifficulty: BattleDifficulty,
-  ) => {
-    setCode(starterCode)
+  const resetBattleState = (nextDifficulty: BattleDifficulty) => {
+    codeRef.current = ''
+    setCode('')
     setResult(null)
     setIsHintVisible(false)
     setRivalName((currentName) => getRandomRivalName(currentName))
@@ -296,7 +295,7 @@ export function BatalhaDevsPage() {
     if (!nextChallenge) return
 
     setChallengeId(nextChallenge.id)
-    resetBattleState(nextChallenge.starterCode, nextChallenge.difficulty)
+    resetBattleState(nextChallenge.difficulty)
   }
 
   const handleLanguageChange = (event: ChangeEvent<HTMLSelectElement>) => {
@@ -318,7 +317,7 @@ export function BatalhaDevsPage() {
     const nextChallenge = compatibleChallenges[nextIndex] ?? currentChallenge
 
     setChallengeId(nextChallenge.id)
-    resetBattleState(nextChallenge.starterCode, nextChallenge.difficulty)
+    resetBattleState(nextChallenge.difficulty)
   }
 
   const handleStartBattle = () => {
@@ -335,16 +334,12 @@ export function BatalhaDevsPage() {
   const handleExecute = () => {
     if (battleOutcome !== 'active') return
 
-    const isCorrect = validateBattleAnswer(
-      code,
-      currentChallenge.expectedAnswer,
-      currentChallenge.language,
-    )
+    const validation = validateBattleSolution(codeRef.current, currentChallenge)
 
-    if (!isCorrect) {
+    if (!validation.isValid) {
       setResult({
         status: 'incorrect',
-        message: 'Quase lá, Dev. Revise sua resposta e tente novamente.',
+        message: validation.message ?? 'Revise sua resposta e tente novamente.',
       })
       return
     }
@@ -380,7 +375,9 @@ export function BatalhaDevsPage() {
   }
 
   const handleCodeChange = useCallback((event: ChangeEvent<HTMLTextAreaElement>) => {
-    setCode(event.target.value)
+    const nextCode = event.target.value
+    codeRef.current = nextCode
+    setCode(nextCode)
     setResult(null)
   }, [])
 

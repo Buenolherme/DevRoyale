@@ -1,5 +1,10 @@
 export { cn } from './cn'
-export { normalizeBattleAnswer, validateBattleAnswer } from './battleValidation'
+export {
+  normalizeBattleAnswer,
+  validateBattleAnswer,
+  validateBattleSolution,
+} from './battleValidation'
+export type { BattleValidationResult } from './battleValidation'
 export {
   STUDY_HISTORY_STORAGE_KEY,
   getCompletedStudyLessonIds,

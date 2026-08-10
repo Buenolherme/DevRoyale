@@ -52,7 +52,15 @@ export type {
   BugDifficulty,
   BugLanguage,
 } from './bug'
-export type { BattleChallenge, BattleDifficulty, BattleLanguage } from './battle'
+export type {
+  BattleChallenge,
+  BattleDifficulty,
+  BattleLanguage,
+  BattlePatternRule,
+  BattleTestCase,
+  BattleValidationRules,
+  BattleValidationStrategy,
+} from './battle'
 export type {
   AchievementSummary,
   AchievementMetricProgress,

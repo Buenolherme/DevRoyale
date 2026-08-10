@@ -498,7 +498,94 @@ const normalizedOriginalMockBattleChallenges: BattleChallenge[] =
     tags: [challenge.language, challenge.difficulty, 'battle'],
   }))
 
-export const mockBattleChallenges: BattleChallenge[] = [
+function getValidationStrategy(
+  challenge: BattleChallenge,
+): NonNullable<BattleChallenge['validationRules']>['strategy'] {
+  if (challenge.language === 'sql') return 'query'
+  if (challenge.language === 'html-css') return 'markup'
+
+  const functionPattern =
+    challenge.language === 'python'
+      ? /(?:async\s+)?def\s+[a-zA-Z_]\w*\s*\(/
+      : /(?:async\s+)?function\s+[a-zA-Z_$][\w$]*\s*\(/
+
+  return functionPattern.test(challenge.expectedAnswer) ? 'function' : 'output'
+}
+
+function getReferenceFunctionName(challenge: BattleChallenge): string | undefined {
+  const pattern =
+    challenge.language === 'python'
+      ? /(?:async\s+)?def\s+([a-zA-Z_]\w*)\s*\(/
+      : /(?:async\s+)?function\s+([a-zA-Z_$][\w$]*)\s*\(/
+
+  return challenge.expectedAnswer.match(pattern)?.[1]
+}
+
+function getReferenceFunctionParameters(challenge: BattleChallenge): string[] {
+  const pattern =
+    challenge.language === 'python'
+      ? /(?:async\s+)?def\s+[a-zA-Z_]\w*\s*\(([^)]*)\)/
+      : /(?:async\s+)?function\s+[a-zA-Z_$][\w$]*\s*\(([^)]*)\)/
+  const parameters = challenge.expectedAnswer.match(pattern)?.[1]
+
+  return parameters
+    ? parameters.split(',').map((parameter) => parameter.trim()).filter(Boolean)
+    : []
+}
+
+function getExpectedOutput(challenge: BattleChallenge): string | number | undefined {
+  if (getValidationStrategy(challenge) !== 'output') return undefined
+
+  const quotedOutput = challenge.statement.match(/[“"]([^”"]+)[”"]/)?.[1]
+  if (quotedOutput) return quotedOutput
+
+  const numericOutput = [...challenge.instructions, challenge.statement]
+    .join(' ')
+    .match(/(?:mostre|resultado)\s+(?:o\s+resultado\s+)?(-?\d+(?:[.,]\d+)?)/i)?.[1]
+
+  return numericOutput ? Number(numericOutput.replace(',', '.')) : undefined
+}
+
+function withValidationMetadata(challenge: BattleChallenge): BattleChallenge {
+  const strategy = getValidationStrategy(challenge)
+  const expectedOutput = challenge.expectedOutput ?? getExpectedOutput(challenge)
+  const functionName =
+    challenge.validationRules?.functionName ?? getReferenceFunctionName(challenge)
+  const functionParameters = getReferenceFunctionParameters(challenge)
+  const functionContract = functionName
+    ? `Crie a função ${functionName}(${functionParameters.join(', ')}).`
+    : undefined
+  const hasExplicitFunctionContract = functionName
+    ? [challenge.statement, ...challenge.instructions]
+        .join(' ')
+        .includes(`${functionName}(`)
+    : false
+
+  return {
+    ...challenge,
+    instructions:
+      strategy === 'function' && functionContract && !hasExplicitFunctionContract
+        ? [functionContract, ...challenge.instructions]
+        : challenge.instructions,
+    expectedOutput,
+    testCases:
+      challenge.testCases ??
+      (expectedOutput !== undefined
+        ? [{ description: 'Saída principal do desafio', expectedOutput }]
+        : undefined),
+    referenceSolution: challenge.referenceSolution ?? challenge.expectedAnswer,
+    validationRules: {
+      strategy,
+      functionName,
+      ...challenge.validationRules,
+    },
+  }
+}
+
+const battleCatalog: BattleChallenge[] = [
   ...normalizedOriginalMockBattleChallenges,
   ...buildBattleCatalogAdditions(normalizedOriginalMockBattleChallenges),
 ]
+
+export const mockBattleChallenges: BattleChallenge[] =
+  battleCatalog.map(withValidationMetadata)

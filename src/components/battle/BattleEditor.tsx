@@ -69,6 +69,7 @@ export const BattleEditor = memo(function BattleEditor({
           className={`battle-code-editor ${isLocked ? 'battle-code-editor--locked' : ''}`}
           value={code}
           onChange={onCodeChange}
+          placeholder="DIGITE SEU CÓDIGO AQUI"
           spellCheck={false}
           readOnly={isLocked}
           aria-readonly={isLocked}
