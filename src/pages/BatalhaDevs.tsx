@@ -5,7 +5,7 @@ import {
   BattleFilters,
   BattleResultFeedback,
 } from '@/components/battle'
-import { AuthBanner, PageHeader, ScoutMascot } from '@/components/layout'
+import { AuthBanner, ScoutMascot } from '@/components/layout'
 import scoutHomeImage from '@/assets/scout/scout-home.png'
 import {
   Badge,
@@ -194,6 +194,22 @@ export function BatalhaDevsPage() {
     battleOutcome === 'active'
       ? scoutMessage[result?.status ?? 'idle']
       : battleScoutMessage[battleOutcome]
+  const battleStatusLabel =
+    battlePhase === 'preparing' || battlePhase === 'countdown' || battlePhase === 'starting'
+      ? 'Preparando'
+      : battleOutcome === 'victory'
+        ? 'Vitória'
+        : battleOutcome === 'defeat'
+          ? 'Derrota'
+          : 'Em batalha'
+  const battleStatusVariant =
+    battleStatusLabel === 'Vitória'
+      ? 'gold'
+      : battleStatusLabel === 'Derrota'
+        ? 'danger'
+        : battleStatusLabel === 'Em batalha'
+          ? 'online'
+          : 'primary'
 
   useEffect(() => {
     if (battlePhase !== 'active' || battleOutcome !== 'active') return
@@ -369,17 +385,58 @@ export function BatalhaDevsPage() {
   }, [])
 
   return (
-    <div className="page-container arena-page-container">
+    <div className="page-container arena-page-container battle-page">
       <AuthBanner />
-      <PageHeader
-        icon={<ModeIcon mode="battle" />}
-        title="Batalha de Devs"
-        description="Escreva uma solução do zero para vencer o desafio."
-      >
-        <Badge variant="primary" className="normal-case tracking-normal">
-          Arena de Treino
-        </Badge>
-      </PageHeader>
+
+      <header className="battle-command-header">
+        <div className="battle-command-header__main">
+          <div className="battle-command-header__identity">
+            <span className="battle-command-header__eyebrow">DevRoyale Competitive Arena</span>
+            <h1>
+              <span className="battle-command-header__icon" aria-hidden="true">
+                <ModeIcon mode="battle" />
+              </span>
+              Arena de Código
+            </h1>
+            <p>Analise o desafio, assuma o editor e vença o duelo com uma solução precisa.</p>
+          </div>
+
+          <div className="battle-command-header__status" role="status">
+            <span>Status da arena</span>
+            <Badge
+              variant={battleStatusVariant}
+              className="battle-command-header__status-badge normal-case tracking-normal"
+            >
+              <i
+                className={`battle-command-header__signal battle-command-header__signal--${battleStatusLabel
+                  .toLowerCase()
+                  .replace(' ', '-')}`}
+                aria-hidden="true"
+              />
+              {battleStatusLabel}
+            </Badge>
+          </div>
+        </div>
+
+        <div className="battle-command-header__telemetry" aria-label="Configuração da arena">
+          <div>
+            <span>Linguagem</span>
+            <strong>{languageLabel[currentChallenge.language]}</strong>
+          </div>
+          <div>
+            <span>Dificuldade</span>
+            <strong>{difficultyLabel[currentChallenge.difficulty]}</strong>
+          </div>
+          <div>
+            <span>Formato</span>
+            <strong>Duelo de código</strong>
+          </div>
+          <div className="battle-command-header__ranked">
+            <span>Ranked online</span>
+            <strong>Em breve</strong>
+          </div>
+        </div>
+      </header>
 
       {battlePhase === 'preparing' && (
         <BattleFilters
@@ -401,34 +458,47 @@ export function BatalhaDevsPage() {
       {battlePhase === 'active' && <div className="battle-workspace">
         <section className="min-w-0 space-y-6" aria-label="Área de resolução do desafio">
           <div className="battle-live-brief" role="status">
-            <Badge variant="primary">Arena ativa</Badge>
-            <p>Resolva o desafio para vencer a arena.</p>
+            <div className="battle-live-brief__state">
+              <span className="battle-active-dot" aria-hidden="true" />
+              <strong>Em batalha</strong>
+            </div>
+            <p>Editor liberado. Resolva o objetivo antes do rival.</p>
+            <span className="battle-live-brief__mode">Duelo 1v1</span>
           </div>
           <Card variant="premium" className="battle-challenge-card">
             <CardHeader>
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div className="min-w-0 flex-1">
-                  <div className="mb-3 flex flex-wrap gap-2">
-                    <Badge variant="gold">Desafio Atual</Badge>
-                    <Badge variant={difficultyVariant[currentChallenge.difficulty]}>
-                      {difficultyLabel[currentChallenge.difficulty]}
-                    </Badge>
-                    <Badge variant="default" className="normal-case">
-                      {languageLabel[currentChallenge.language]}
-                    </Badge>
-                    <Badge variant="gold" className="normal-case tracking-normal">
-                      {getBattleXp(currentChallenge.id, currentChallenge.difficulty)} XP
-                    </Badge>
-                  </div>
-                  <CardTitle className="text-xl md:text-2xl">
-                    {currentChallenge.title}
-                  </CardTitle>
-                  <CardDescription className="max-w-2xl text-sm md:text-base">
-                    {currentChallenge.statement}
-                  </CardDescription>
-                </div>
+              <div className="battle-challenge-card__topline">
+                <span>Objetivo do duelo</span>
                 <div className="battle-challenge-number" aria-hidden="true">
                   {String(challengeNumber + 1).padStart(2, '0')}
+                </div>
+              </div>
+
+              <CardTitle className="battle-challenge-card__title">
+                {currentChallenge.title}
+              </CardTitle>
+              <CardDescription className="battle-challenge-card__description">
+                {currentChallenge.statement}
+              </CardDescription>
+
+              <div className="battle-challenge-meta" aria-label="Detalhes do desafio">
+                <div>
+                  <span>Linguagem</span>
+                  <Badge variant="default" className="normal-case tracking-normal">
+                    {languageLabel[currentChallenge.language]}
+                  </Badge>
+                </div>
+                <div>
+                  <span>Dificuldade</span>
+                  <Badge variant={difficultyVariant[currentChallenge.difficulty]}>
+                    {difficultyLabel[currentChallenge.difficulty]}
+                  </Badge>
+                </div>
+                <div>
+                  <span>Recompensa</span>
+                  <Badge variant="gold" className="normal-case tracking-normal">
+                    {getBattleXp(currentChallenge.id, currentChallenge.difficulty)} XP
+                  </Badge>
                 </div>
               </div>
             </CardHeader>
@@ -473,7 +543,8 @@ export function BatalhaDevsPage() {
                   className="battle-action battle-action--primary"
                   onClick={handleExecute}
                 >
-                  Executar
+                  <span className="battle-action__terminal" aria-hidden="true">&gt;_</span>
+                  Executar código
                 </Button>
                 <Button
                   type="button"
@@ -506,7 +577,7 @@ export function BatalhaDevsPage() {
               <div className="battle-rival-card__glow" aria-hidden="true" />
 
               <div className="relative flex flex-wrap items-center justify-between gap-3">
-                <Badge variant="primary">Dev Rival</Badge>
+                <Badge variant="primary">Rival simulado</Badge>
                 {battleOutcome === 'active' ? (
                   <Badge
                     variant="online"
@@ -575,6 +646,11 @@ export function BatalhaDevsPage() {
                     style={{ width: `${rivalProgress}%` }}
                   />
                 </div>
+              </div>
+
+              <div className="battle-rival-future">
+                <span>Ranked online</span>
+                <strong>Em breve</strong>
               </div>
             </CardContent>
           </Card>

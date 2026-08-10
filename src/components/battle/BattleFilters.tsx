@@ -40,12 +40,12 @@ export function BattleFilters({
       <CardContent className="p-0">
         <div className="battle-preparation__heading">
           <div>
-            <Badge variant="gold">Briefing da arena</Badge>
+            <Badge variant="primary">Preparando</Badge>
             <h2 id="battle-preparation-title" className="battle-preparation__title">
-              Prepare sua arena
+              Configure seu próximo duelo
             </h2>
             <p className="battle-preparation__description">
-              Escolha sua linguagem, selecione a dificuldade e entre na batalha.
+              Defina linguagem e dificuldade. O desafio será revelado quando a arena abrir.
             </p>
           </div>
           <div className="battle-preparation__mark" aria-hidden="true">
@@ -53,21 +53,33 @@ export function BattleFilters({
           </div>
         </div>
 
-        <div className="battle-preparation__filters">
-          <Select
-            id="battle-language"
-            label="Linguagem"
-            options={languageOptions}
-            value={language}
-            onChange={onLanguageChange}
-          />
-          <Select
-            id="battle-difficulty"
-            label="Dificuldade"
-            options={difficultyOptions}
-            value={difficulty}
-            onChange={onDifficultyChange}
-          />
+        <div className="battle-preparation__body">
+          <div className="battle-preparation__filters">
+            <Select
+              id="battle-language"
+              label="Linguagem da batalha"
+              options={languageOptions}
+              value={language}
+              onChange={onLanguageChange}
+            />
+            <Select
+              id="battle-difficulty"
+              label="Nível do duelo"
+              options={difficultyOptions}
+              value={difficulty}
+              onChange={onDifficultyChange}
+            />
+          </div>
+
+          <aside className="battle-preparation__rival-slot" aria-label="Futuro modo ranked">
+            <div className="battle-preparation__rival-avatar" aria-hidden="true">?</div>
+            <div>
+              <span>Slot do rival</span>
+              <strong>Matchmaking ranked</strong>
+              <p>Estrutura visual preparada para futuros duelos online.</p>
+            </div>
+            <Badge variant="gold" className="normal-case tracking-normal">Em breve</Badge>
+          </aside>
         </div>
 
         <div className="battle-preparation__footer">
@@ -75,8 +87,14 @@ export function BattleFilters({
             <span aria-hidden="true" />
             Aguardando início da batalha...
           </p>
-          <Button type="button" variant="gold" size="lg" onClick={onStartBattle}>
-            Começar Batalha
+          <Button
+            type="button"
+            variant="gold"
+            size="lg"
+            className="battle-start-button"
+            onClick={onStartBattle}
+          >
+            Entrar na Arena
           </Button>
         </div>
       </CardContent>

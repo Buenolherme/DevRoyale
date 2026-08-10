@@ -41,16 +41,23 @@ export const BattleEditor = memo(function BattleEditor({
 }: BattleEditorProps) {
   return (
     <Card variant="premium" className="battle-editor-card p-0">
+      <div className="battle-editor-card__crown" aria-hidden="true" />
       <div className="battle-editor-toolbar">
         <div className="flex items-center gap-2" aria-hidden="true">
           <span className="battle-editor-dot battle-editor-dot--red" />
           <span className="battle-editor-dot battle-editor-dot--gold" />
           <span className="battle-editor-dot battle-editor-dot--muted" />
         </div>
-        <span className="battle-editor-filename">{editorFilename[language]}</span>
-        <Badge variant="default" className="normal-case tracking-normal">
-          Editor
-        </Badge>
+        <div className="battle-editor-file">
+          <span>Battle IDE</span>
+          <strong className="battle-editor-filename">{editorFilename[language]}</strong>
+        </div>
+        <div className="battle-editor-toolbar__status">
+          <span><i aria-hidden="true" /> Workspace ativo</span>
+          <Badge variant="gold" className="normal-case tracking-normal">
+            {languageLabel[language]}
+          </Badge>
+        </div>
       </div>
 
       <div className="battle-editor-stage">
@@ -73,10 +80,13 @@ export const BattleEditor = memo(function BattleEditor({
       </div>
 
       <div className="battle-editor-footer">
-        <p id="battle-editor-note">
-          Desafio {Math.max(challengeIndex + 1, 1)} de {challengeCount} nesta seleção.
-        </p>
-        <span>{languageLabel[language]}</span>
+        <div>
+          <span className="battle-editor-footer__signal" aria-hidden="true" />
+          <p id="battle-editor-note">Editor central da arena</p>
+        </div>
+        <span>
+          Desafio {Math.max(challengeIndex + 1, 1)} de {challengeCount}
+        </span>
       </div>
     </Card>
   )
