@@ -55,6 +55,7 @@ export type {
 export type {
   BattleChallenge,
   BattleDifficulty,
+  BattleHints,
   BattleLanguage,
   BattlePatternRule,
   BattleTestCase,

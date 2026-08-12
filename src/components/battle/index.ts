@@ -1,5 +1,7 @@
 export * from './BattleCountdown'
 export * from './BattleEditor'
 export * from './BattleFilters'
+export * from './BattleHintPanel'
 export * from './BattleOutcomeOverlay'
+export * from './BattleReferenceSolution'
 export * from './BattleResultFeedback'

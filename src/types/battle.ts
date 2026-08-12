@@ -12,6 +12,8 @@ export type BattleValidationStrategy =
   | 'query'
   | 'markup'
 
+export type BattleHints = [string, string, string]
+
 export interface BattleTestCase {
   description: string
   input?: unknown
@@ -38,6 +40,8 @@ export interface BattleChallenge {
   instructions: string[]
   starterCode: string
   expectedAnswer: string
+  allowHints?: boolean
+  hints?: BattleHints
   expectedOutput?: unknown
   testCases?: BattleTestCase[]
   validationRules?: BattleValidationRules

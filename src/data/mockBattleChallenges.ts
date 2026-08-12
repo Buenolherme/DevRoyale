@@ -1,4 +1,5 @@
 import type { BattleChallenge } from '@/types/battle'
+import { getBattleHints } from './battleHints'
 import { buildBattleCatalogAdditions } from './mockBattleChallengesExpansion'
 
 type LegacyBattleChallenge = Omit<BattleChallenge, 'description' | 'tags'>
@@ -563,6 +564,8 @@ function withValidationMetadata(challenge: BattleChallenge): BattleChallenge {
 
   return {
     ...challenge,
+    allowHints: challenge.allowHints ?? true,
+    hints: challenge.hints ?? getBattleHints(challenge.id),
     instructions:
       strategy === 'function' && functionContract && !hasExplicitFunctionContract
         ? [functionContract, ...challenge.instructions]

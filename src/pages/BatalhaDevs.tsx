@@ -3,6 +3,8 @@ import {
   BattleCountdown,
   BattleEditor,
   BattleFilters,
+  BattleHintPanel,
+  BattleReferenceSolution,
   BattleResultFeedback,
 } from '@/components/battle'
 import { AuthBanner, ScoutMascot } from '@/components/layout'
@@ -146,7 +148,7 @@ export function BatalhaDevsPage() {
   const [code, setCode] = useState('')
   const codeRef = useRef('')
   const [result, setResult] = useState<BattleResult | null>(null)
-  const [isHintVisible, setIsHintVisible] = useState(false)
+  const [revealedHintCount, setRevealedHintCount] = useState(0)
   const [battlePhase, setBattlePhase] = useState<BattlePhase>('preparing')
   const [countdownValue, setCountdownValue] = useState<number | null>(null)
   const [rivalName, setRivalName] = useState(() => getRandomRivalName())
@@ -182,6 +184,20 @@ export function BatalhaDevsPage() {
     [currentChallenge.id],
   )
   const battleOutcome = battleRace.outcome
+  const currentHints = currentChallenge.hints
+  const hintsAllowed = currentChallenge.allowHints !== false && Boolean(currentHints?.length)
+  const currentHint =
+    currentHints && revealedHintCount > 0
+      ? currentHints[Math.min(revealedHintCount, currentHints.length) - 1]
+      : undefined
+  const hintButtonLabel =
+    revealedHintCount === 0
+      ? 'Ver dica'
+      : revealedHintCount === 1
+        ? 'Ver próxima dica'
+        : revealedHintCount === 2
+          ? 'Última dica'
+          : 'Dicas esgotadas'
   const elapsedSeconds = Math.min(
     Math.floor(battleRace.elapsedMilliseconds / 1000),
     battleDuration,
@@ -272,7 +288,7 @@ export function BatalhaDevsPage() {
     codeRef.current = ''
     setCode('')
     setResult(null)
-    setIsHintVisible(false)
+    setRevealedHintCount(0)
     setRivalName((currentName) => getRandomRivalName(currentName))
     setBattleRace({
       elapsedMilliseconds: 0,
@@ -322,7 +338,7 @@ export function BatalhaDevsPage() {
 
   const handleStartBattle = () => {
     setResult(null)
-    setIsHintVisible(false)
+    setRevealedHintCount(0)
     setBattleRace({
       elapsedMilliseconds: 0,
       outcome: 'active',
@@ -524,11 +540,20 @@ export function BatalhaDevsPage() {
 
           {result && battleOutcome !== 'defeat' && <BattleResultFeedback result={result} />}
 
-          {isHintVisible && battleOutcome === 'active' && (
-            <div className="battle-hint" id="battle-hint">
-              <Badge variant="gold">Dica</Badge>
-              <p>{currentChallenge.hint}</p>
-            </div>
+          {currentHint && currentHints && battleOutcome === 'active' && (
+            <BattleHintPanel
+              hint={currentHint}
+              level={revealedHintCount}
+              total={currentHints.length}
+            />
+          )}
+
+          {battleOutcome !== 'active' && (
+            <BattleReferenceSolution
+              code={currentChallenge.referenceSolution ?? currentChallenge.expectedAnswer}
+              language={currentChallenge.language}
+              outcome={battleOutcome}
+            />
           )}
 
           <div className={`battle-actions ${battleOutcome !== 'active' ? 'battle-actions--ended' : ''}`}>
@@ -543,17 +568,22 @@ export function BatalhaDevsPage() {
                   <span className="battle-action__terminal" aria-hidden="true">&gt;_</span>
                   Executar código
                 </Button>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="lg"
-                  className="battle-action"
-                  onClick={() => setIsHintVisible((visible) => !visible)}
-                  aria-expanded={isHintVisible}
-                  aria-controls="battle-hint"
-                >
-                  {isHintVisible ? 'Ocultar Dica' : 'Ver Dica'}
-                </Button>
+                {hintsAllowed && currentHints && (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="lg"
+                    className="battle-action"
+                    onClick={() =>
+                      setRevealedHintCount((count) => Math.min(count + 1, currentHints.length))
+                    }
+                    aria-expanded={revealedHintCount > 0}
+                    aria-controls="battle-hint"
+                    disabled={revealedHintCount >= currentHints.length}
+                  >
+                    {hintButtonLabel}
+                  </Button>
+                )}
               </>
             )}
             <Button

@@ -243,7 +243,7 @@ function validatePatternRules(
   if (forbiddenRule) {
     return {
       isValid: false,
-      message: `A solução usa algo não permitido: ${forbiddenRule.description}`,
+      message: `Uma restrição obrigatória não foi atendida: ${forbiddenRule.description}`,
     }
   }
 
@@ -253,7 +253,7 @@ function validatePatternRules(
   if (missingRule) {
     return {
       isValid: false,
-      message: `Revise esta restrição do desafio: ${missingRule.description}`,
+      message: `O resultado está correto em parte, mas falta atender esta restrição: ${missingRule.description}`,
     }
   }
 
@@ -270,7 +270,10 @@ function validateExplicitTechniques(
   )
 
   if (missingTechnique) {
-    return { isValid: false, message: missingTechnique.description }
+    return {
+      isValid: false,
+      message: `Você está perto, mas uma técnica obrigatória ainda não foi usada. ${missingTechnique.description}`,
+    }
   }
 
   if (/não compare null com\s*=/i.test(instructions) && /=\s*null\b/i.test(answer)) {
@@ -414,14 +417,14 @@ function validateFunctionSolution(
   ) {
     return {
       isValid: false,
-      message: 'A função precisa retornar o resultado solicitado.',
+      message: 'A função esperada existe, mas ainda não retorna o resultado solicitado.',
     }
   }
 
   if (/\breturn\s+(?:none|null|undefined)\s*;?\s*}?\s*$/i.test(meaningfulSource)) {
     return {
       isValid: false,
-      message: 'A função ainda não retorna um resultado válido para o desafio.',
+      message: 'A função esperada existe, mas o retorno ainda não está correto.',
     }
   }
 
@@ -690,7 +693,7 @@ function validateOutputSolution(
       ? { isValid: true }
       : {
           isValid: false,
-          message: `A execução precisa produzir o resultado ${expectedOutput}.`,
+          message: 'Seu código executou, mas a saída não corresponde ao resultado esperado.',
         }
   }
 
@@ -705,7 +708,7 @@ function validateOutputSolution(
     ? { isValid: true }
     : {
         isValid: false,
-        message: `A execução precisa produzir exatamente: ${String(expectedOutput)}`,
+        message: 'Seu código executou, mas a saída não corresponde ao texto esperado.',
       }
 }
 
@@ -772,7 +775,7 @@ function validateSqlSolution(
   if (missingIdentifier) {
     return {
       isValid: false,
-      message: `A saída da consulta precisa incluir ${missingIdentifier}.`,
+      message: `Revise as colunas retornadas pela consulta SQL: ainda falta ${missingIdentifier}.`,
     }
   }
 
@@ -915,7 +918,7 @@ function validateMarkupSolution(
   if (missingTag) {
     return {
       isValid: false,
-      message: `Inclua o elemento <${missingTag}> solicitado pelo desafio.`,
+      message: `Revise a estrutura HTML solicitada: ainda falta o elemento <${missingTag}>.`,
     }
   }
 
@@ -954,7 +957,7 @@ function validateMarkupSolution(
   if (missingProperty) {
     return {
       isValid: false,
-      message: `A estilização precisa definir a propriedade ${missingProperty}.`,
+      message: `Uma propriedade CSS obrigatória ainda está faltando: ${missingProperty}.`,
     }
   }
 
