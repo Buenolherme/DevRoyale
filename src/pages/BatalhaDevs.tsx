@@ -2,8 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } f
 import {
   BattleCountdown,
   BattleEditor,
+  BattleExitDialog,
   BattleFilters,
   BattleHintPanel,
+  BattleIntegrityIndicator,
   BattleReferenceSolution,
   BattleResultFeedback,
 } from '@/components/battle'
@@ -20,7 +22,7 @@ import {
   ModeIcon,
 } from '@/components/ui'
 import { mockBattleChallenges } from '@/data/mockBattleChallenges'
-import { useAuth } from '@/hooks'
+import { useAuth, useBattleIntegrity } from '@/hooks'
 import type { BattleDifficulty, BattleLanguage } from '@/types'
 import { addXP, validateBattleSolution } from '@/utils'
 
@@ -74,6 +76,7 @@ function getBattleXp(challengeId: string, difficulty: BattleDifficulty): number 
 
 const initialLanguage: BattleLanguage = 'python'
 const initialDifficulty: BattleDifficulty = 'never'
+const currentBattleMode = 'casual' as const
 const initialChallenge =
   mockBattleChallenges.find(
     (challenge) =>
@@ -185,7 +188,6 @@ export function BatalhaDevsPage() {
   )
   const battleOutcome = battleRace.outcome
   const currentHints = currentChallenge.hints
-  const hintsAllowed = currentChallenge.allowHints !== false && Boolean(currentHints?.length)
   const currentHint =
     currentHints && revealedHintCount > 0
       ? currentHints[Math.min(revealedHintCount, currentHints.length) - 1]
@@ -227,6 +229,28 @@ export function BatalhaDevsPage() {
         : battleStatusLabel === 'Em batalha'
           ? 'online'
           : 'primary'
+  const battleIsActive = battlePhase === 'active' && battleOutcome === 'active'
+  const {
+    warningCount: integrityWarningCount,
+    compromised: integrityCompromised,
+    trackingEnabled: integrityTrackingEnabled,
+    notice: integrityNotice,
+    pendingNavigation,
+    modeRules,
+    reportPasteAttempt,
+    reportChallengeCopyAttempt,
+    resetIntegrity,
+    cancelNavigation,
+    confirmNavigation,
+  } = useBattleIntegrity({
+    active: battleIsActive,
+    difficulty: currentChallenge.difficulty,
+    mode: currentBattleMode,
+  })
+  const hintsAllowed =
+    modeRules.allowHints &&
+    currentChallenge.allowHints !== false &&
+    Boolean(currentHints?.length)
 
   useEffect(() => {
     if (battlePhase !== 'active' || battleOutcome !== 'active') return
@@ -285,6 +309,7 @@ export function BatalhaDevsPage() {
   }, [battlePhase, countdownValue])
 
   const resetBattleState = (nextDifficulty: BattleDifficulty) => {
+    resetIntegrity()
     codeRef.current = ''
     setCode('')
     setResult(null)
@@ -337,6 +362,7 @@ export function BatalhaDevsPage() {
   }
 
   const handleStartBattle = () => {
+    resetIntegrity()
     setResult(null)
     setRevealedHintCount(0)
     setBattleRace({
@@ -390,16 +416,27 @@ export function BatalhaDevsPage() {
     })
   }
 
-  const handleCodeChange = useCallback((event: ChangeEvent<HTMLTextAreaElement>) => {
-    const nextCode = event.target.value
+  const handleCodeChange = useCallback((nextCode: string) => {
     codeRef.current = nextCode
     setCode(nextCode)
     setResult(null)
   }, [])
 
+  const handleProtectedChallengeAction = (event: { preventDefault: () => void }) => {
+    if (!battleIsActive) return
+
+    event.preventDefault()
+    reportChallengeCopyAttempt()
+  }
+
   return (
     <div className="page-container arena-page-container battle-page">
       <AuthBanner />
+      <BattleExitDialog
+        open={Boolean(pendingNavigation)}
+        onContinue={cancelNavigation}
+        onExit={confirmNavigation}
+      />
 
       <header className="battle-command-header">
         <div className="battle-command-header__main">
@@ -478,7 +515,18 @@ export function BatalhaDevsPage() {
             <p>Editor liberado. Resolva o objetivo antes do rival.</p>
             <span className="battle-live-brief__mode">Duelo 1v1</span>
           </div>
-          <Card variant="premium" className="battle-challenge-card">
+          <BattleIntegrityIndicator
+            warningCount={integrityWarningCount}
+            compromised={integrityCompromised}
+            trackingEnabled={integrityTrackingEnabled}
+            notice={integrityNotice}
+          />
+          <Card
+            variant="premium"
+            className={`battle-challenge-card ${battleIsActive ? 'battle-challenge-card--protected' : ''}`}
+            onCopy={handleProtectedChallengeAction}
+            onContextMenu={handleProtectedChallengeAction}
+          >
             <CardHeader>
               <div className="battle-challenge-card__topline">
                 <span>Objetivo do duelo</span>
@@ -535,7 +583,9 @@ export function BatalhaDevsPage() {
             challengeCount={compatibleChallenges.length}
             outcome={battleOutcome === 'active' ? null : battleOutcome}
             isLocked={battleOutcome !== 'active'}
+            validationMessage={result?.status === 'incorrect' ? result.message : undefined}
             onCodeChange={handleCodeChange}
+            onPasteBlocked={reportPasteAttempt}
           />
 
           {result && battleOutcome !== 'defeat' && <BattleResultFeedback result={result} />}

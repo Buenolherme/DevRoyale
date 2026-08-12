@@ -2037,3 +2037,374 @@
     max-height: 28rem;
   }
 }
+
+/* ── Integridade da Arena e editor profissional V1.5E ── */
+.battle-integrity {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.9rem 1.2rem;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--color-secondary) 24%, var(--color-border));
+  border-radius: 1rem;
+  background:
+    radial-gradient(circle at 8% 0%, rgba(214, 168, 74, 0.08), transparent 38%),
+    linear-gradient(120deg, rgba(18, 18, 22, 0.97), rgba(9, 9, 12, 0.98));
+  padding: 0.9rem 1rem;
+  box-shadow:
+    0 16px 38px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+.battle-integrity::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 2px;
+  background: linear-gradient(180deg, transparent, var(--color-secondary), transparent);
+}
+
+.battle-integrity--compromised {
+  border-color: color-mix(in srgb, var(--color-danger) 48%, var(--color-border));
+  background:
+    radial-gradient(circle at 8% 0%, rgba(139, 30, 30, 0.18), transparent 40%),
+    linear-gradient(120deg, rgba(22, 14, 16, 0.98), rgba(10, 9, 11, 0.98));
+}
+
+.battle-integrity--compromised::before {
+  background: linear-gradient(180deg, transparent, var(--color-danger), transparent);
+}
+
+.battle-integrity__summary {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.battle-integrity__shield {
+  display: grid;
+  flex: 0 0 auto;
+  width: 2.5rem;
+  height: 2.5rem;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--color-secondary) 35%, var(--color-border));
+  border-radius: 0.8rem;
+  background: rgba(214, 168, 74, 0.07);
+  color: var(--color-secondary);
+}
+
+.battle-integrity--compromised .battle-integrity__shield {
+  border-color: color-mix(in srgb, var(--color-danger) 48%, var(--color-border));
+  background: rgba(139, 30, 30, 0.14);
+  color: var(--color-danger-light);
+}
+
+.battle-integrity__shield svg {
+  width: 1.35rem;
+  height: 1.35rem;
+}
+
+.battle-integrity__summary h2 {
+  color: var(--color-text-muted);
+  font-size: 0.61rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.battle-integrity__summary strong {
+  display: block;
+  margin-top: 0.15rem;
+  color: var(--color-text);
+  font-size: 0.88rem;
+  font-weight: 850;
+}
+
+.battle-integrity__summary small {
+  display: block;
+  margin-top: 0.16rem;
+  color: var(--color-text-muted);
+  font-size: 0.65rem;
+  line-height: 1.45;
+}
+
+.battle-integrity__meter {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 0.32rem;
+}
+
+.battle-integrity__step {
+  width: 1.45rem;
+  height: 0.22rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-text-muted) 22%, transparent);
+}
+
+.battle-integrity__step--active {
+  background: linear-gradient(90deg, var(--color-primary), var(--color-danger-light));
+  box-shadow: 0 0 8px rgba(139, 30, 30, 0.38);
+}
+
+.battle-integrity__notice {
+  grid-column: 1 / -1;
+  border-top: 1px solid var(--color-border);
+  padding-top: 0.75rem;
+  color: var(--color-text);
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1.55;
+  animation: battle-integrity-notice-in 220ms ease-out both;
+}
+
+.battle-integrity__notice--warning {
+  color: color-mix(in srgb, var(--color-secondary-light) 88%, var(--color-text));
+}
+
+.battle-integrity__notice--danger {
+  color: var(--color-danger-light);
+}
+
+@keyframes battle-integrity-notice-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.25rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.battle-exit-dialog {
+  position: fixed;
+  z-index: 120;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(3, 3, 5, 0.78);
+  padding: 1rem;
+  backdrop-filter: blur(10px);
+}
+
+.battle-exit-dialog__panel {
+  width: min(100%, 31rem);
+  border: 1px solid color-mix(in srgb, var(--color-secondary) 38%, var(--color-border));
+  border-radius: 1.25rem;
+  background:
+    radial-gradient(circle at 90% 0%, rgba(139, 30, 30, 0.16), transparent 34%),
+    linear-gradient(140deg, rgba(25, 25, 30, 0.99), rgba(10, 10, 13, 0.99));
+  padding: clamp(1.25rem, 4vw, 1.8rem);
+  box-shadow:
+    0 34px 90px rgba(0, 0, 0, 0.55),
+    0 0 50px rgba(214, 168, 74, 0.08);
+}
+
+.battle-exit-dialog__eyebrow {
+  color: var(--color-secondary);
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.battle-exit-dialog h2 {
+  margin-top: 0.55rem;
+  color: var(--color-text);
+  font-size: clamp(1.35rem, 5vw, 1.8rem);
+  font-weight: 950;
+  letter-spacing: -0.025em;
+  text-transform: uppercase;
+}
+
+.battle-exit-dialog p {
+  margin-top: 0.65rem;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  line-height: 1.65;
+}
+
+.battle-exit-dialog__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  margin-top: 1.35rem;
+}
+
+.battle-code-shell {
+  --editor-padding-block: 1.55rem;
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 3.15rem minmax(0, 1fr);
+  background: #08080a;
+}
+
+.battle-editor-gutter {
+  position: relative;
+  z-index: 5;
+  min-width: 0;
+  overflow: hidden;
+  border-right: 1px solid color-mix(in srgb, var(--color-secondary) 14%, var(--color-border));
+  background: linear-gradient(90deg, #0c0c0f, #09090c);
+  color: color-mix(in srgb, var(--color-text-muted) 66%, transparent);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.72rem;
+  line-height: 1.739rem;
+  text-align: right;
+  user-select: none;
+}
+
+.battle-editor-gutter__content {
+  display: grid;
+  padding: var(--editor-padding-block) 0.8rem var(--editor-padding-block) 0.25rem;
+  will-change: transform;
+}
+
+.battle-editor-gutter__line {
+  height: 1.739rem;
+  transition: color 120ms ease;
+}
+
+.battle-editor-gutter__line--active {
+  color: var(--color-secondary-light);
+  font-weight: 850;
+}
+
+.battle-code-editor-layer {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  background:
+    linear-gradient(90deg, rgba(214, 168, 74, 0.045) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.012), transparent 20%),
+    #08080a;
+  background-size: 3.5rem 100%, 100% 100%, 100% 100%;
+}
+
+.battle-code-editor-layer .battle-code-editor {
+  position: relative;
+  z-index: 3;
+  background: transparent;
+  background-image: none;
+  white-space: pre;
+}
+
+.battle-code-editor__current-line,
+.battle-code-editor__error-line {
+  position: absolute;
+  z-index: 1;
+  right: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+.battle-code-editor__current-line {
+  border-inline-start: 2px solid rgba(214, 168, 74, 0.3);
+  background: rgba(214, 168, 74, 0.045);
+}
+
+.battle-code-editor__error-line {
+  z-index: 2;
+  border-inline-start: 2px solid rgba(220, 70, 70, 0.72);
+  background: linear-gradient(90deg, rgba(139, 30, 30, 0.12), transparent 72%);
+}
+
+.battle-code-editor__mirror {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  left: 0;
+  min-width: 100%;
+  min-height: 100%;
+  margin: 0;
+  padding: var(--editor-padding-block) 1.65rem;
+  color: transparent;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.94rem;
+  line-height: 1.85;
+  tab-size: 2;
+  white-space: pre;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.battle-code-editor__mirror mark {
+  border-radius: 0.2rem;
+  background: rgba(214, 168, 74, 0.28);
+  color: transparent;
+  outline: 1px solid rgba(214, 168, 74, 0.62);
+  outline-offset: 1px;
+}
+
+.battle-editor-problem {
+  color: var(--color-danger-light);
+  font-weight: 750;
+}
+
+.battle-challenge-card--protected {
+  -webkit-touch-callout: none;
+}
+
+@media (max-width: 639px) {
+  .battle-integrity {
+    grid-template-columns: 1fr;
+  }
+
+  .battle-integrity__meter {
+    width: 100%;
+  }
+
+  .battle-integrity__step {
+    flex: 1 1 0;
+  }
+
+  .battle-exit-dialog__actions {
+    display: grid;
+  }
+
+  .battle-exit-dialog__actions > * {
+    width: 100%;
+  }
+
+  .battle-code-shell {
+    --editor-padding-block: 1.2rem;
+    grid-template-columns: 2.55rem minmax(0, 1fr);
+  }
+
+  .battle-editor-gutter {
+    font-size: 0.66rem;
+    line-height: 1.428rem;
+  }
+
+  .battle-editor-gutter__content {
+    padding-right: 0.62rem;
+  }
+
+  .battle-editor-gutter__line {
+    height: 1.428rem;
+  }
+
+  .battle-code-editor__mirror {
+    padding: var(--editor-padding-block) 1.2rem;
+    font-size: 0.84rem;
+    line-height: 1.7;
+  }
+
+  .battle-editor-footer {
+    gap: 0.45rem;
+  }
+
+  .battle-editor-problem {
+    line-height: 1.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .battle-integrity__notice {
+    animation: none;
+  }
+}
