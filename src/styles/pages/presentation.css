@@ -180,7 +180,7 @@ body {
 }
 
 .onboarding-dialog__skip:hover {
-  color: var(--color-secondary-light);
+  color: var(--color-accent-text);
 }
 
 .onboarding-dialog__skip:focus-visible {
@@ -203,7 +203,7 @@ body {
   place-items: center;
   border: 1px solid color-mix(in srgb, var(--color-secondary) 34%, var(--color-border));
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(214, 168, 74, 0.13), rgba(9, 9, 12, 0.7));
+  background: radial-gradient(circle, rgba(214, 168, 74, 0.13), var(--surface-arena-muted));
   color: var(--color-secondary);
   box-shadow: 0 0 34px rgba(214, 168, 74, 0.09);
 }
@@ -313,7 +313,7 @@ body {
 }
 
 .about-hero__header p {
-  color: var(--color-secondary-light);
+  color: var(--color-accent-text);
   font-size: clamp(1.05rem, 3vw, 1.45rem);
   font-weight: 700;
 }
@@ -435,7 +435,7 @@ body {
 }
 
 .about-battle__details span {
-  color: var(--color-secondary-light);
+  color: var(--color-accent-text);
   font-size: 0.8rem;
   text-align: right;
 }
@@ -489,7 +489,7 @@ body {
 }
 
 .about-xp__metric strong {
-  color: var(--color-secondary-light);
+  color: var(--color-accent-text);
   font-size: 2.5rem;
   line-height: 1;
 }
@@ -541,7 +541,7 @@ body {
 .about-status strong {
   display: inline-block;
   margin-top: 0.55rem;
-  color: var(--color-secondary-light);
+  color: var(--color-accent-text);
 }
 
 .about-status__creator {
@@ -862,7 +862,7 @@ body {
 .battle-report-dialog__status {
   min-height: 1.2rem;
   margin-top: 0.75rem;
-  color: var(--color-secondary-light);
+  color: var(--color-accent-text);
   font-size: 0.7rem;
   line-height: 1.5;
 }
@@ -879,7 +879,7 @@ body {
 }
 
 .battle-report-trigger:hover {
-  color: var(--color-secondary-light);
+  color: var(--color-accent-text);
 }
 
 .battle-mobile-recommendation {

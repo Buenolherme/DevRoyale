@@ -20,7 +20,7 @@ export function Card({
         'rounded-2xl border p-6 shadow-[var(--shadow-card)]',
         variant === 'default' && 'border-border bg-background-elevated',
         variant === 'premium' &&
-          'border-border-strong bg-background-elevated border-secondary/15',
+          'border-secondary/20 bg-background-elevated',
         variant === 'scout' && 'scout-warrior-card',
         hoverable && 'card-glow-hover',
         className,

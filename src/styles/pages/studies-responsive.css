@@ -208,7 +208,7 @@
 }
 
 .study-completion-feedback--info p {
-  color: var(--color-secondary-light);
+  color: var(--color-accent-text);
 }
 
 .study-completion-feedback--error {

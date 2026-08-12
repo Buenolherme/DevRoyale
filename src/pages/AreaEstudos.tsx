@@ -531,7 +531,7 @@ export function AreaEstudosPage() {
                         key={resource.url}
                         href={resource.url}
                         target="_blank"
-                        rel="noreferrer"
+                        rel="noopener noreferrer"
                         className="study-resource-link focus-ring"
                       >
                         <span>▶</span>
@@ -547,7 +547,7 @@ export function AreaEstudosPage() {
                         key={resource.url}
                         href={resource.url}
                         target="_blank"
-                        rel="noreferrer"
+                        rel="noopener noreferrer"
                         className="study-resource-link focus-ring"
                       >
                         <span>↗</span>
@@ -634,7 +634,7 @@ export function AreaEstudosPage() {
               key={`recommendation-${resource.url}`}
               href={resource.url}
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               className="study-recommendation-resource focus-ring"
             >
               <span>{resource.type === 'Vídeo' ? '▶' : '↗'}</span>

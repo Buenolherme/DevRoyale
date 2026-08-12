@@ -259,12 +259,11 @@
   background:
     radial-gradient(circle at 50% 28%, color-mix(in srgb, var(--feature-card-accent) 19%, transparent), transparent 56%),
     radial-gradient(circle at 50% 58%, rgba(139, 30, 30, 0.1), transparent 60%),
-    rgba(8, 8, 11, 0.68);
+    var(--surface-arena-muted);
   box-shadow:
-    0 18px 34px rgba(0, 0, 0, 0.32),
+    var(--shadow-arena),
     0 0 30px color-mix(in srgb, var(--feature-card-accent) 16%, transparent),
-    inset 0 1px 0 rgba(255, 255, 255, 0.045),
-    inset 0 -18px 34px rgba(0, 0, 0, 0.24);
+    inset 0 -18px 34px color-mix(in srgb, var(--color-text) 6%, transparent);
   transform: rotate(-2deg);
   transition:
     transform 360ms cubic-bezier(0.22, 1, 0.36, 1),

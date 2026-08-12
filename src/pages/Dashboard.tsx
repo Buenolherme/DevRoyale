@@ -270,7 +270,7 @@ export function DashboardPage() {
                 <p>Sua primeira batalha, correção de bug ou aula aparecerá aqui.</p>
                 <Link
                   to={ROUTES.BATALHA_DEVS}
-                  className="focus-ring mt-3 inline-flex rounded font-bold text-secondary hover:text-secondary-light"
+                  className="focus-ring mt-3 inline-flex rounded font-bold text-[var(--color-accent-text)] hover:text-secondary"
                 >
                   Entrar na Batalha
                 </Link>

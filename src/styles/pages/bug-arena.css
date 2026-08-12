@@ -8,7 +8,8 @@
   background:
     radial-gradient(circle at 12% 42%, rgba(214, 168, 74, 0.14), transparent 28%),
     radial-gradient(circle at 82% 0%, rgba(139, 30, 30, 0.17), transparent 34%),
-    linear-gradient(135deg, rgba(27, 27, 30, 0.98), rgba(12, 12, 14, 0.99));
+    linear-gradient(135deg, var(--surface-arena-elevated), var(--surface-arena));
+  box-shadow: var(--shadow-arena);
 }
 
 .bug-scout-recommendation::before {
@@ -124,7 +125,7 @@
   align-content: center;
   gap: 0.55rem;
   border-left: 1px solid rgba(214, 168, 74, 0.12);
-  background: rgba(4, 4, 6, 0.2);
+  background: color-mix(in srgb, var(--surface-arena-muted) 78%, transparent);
   padding: 1.25rem;
 }
 

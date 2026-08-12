@@ -35,8 +35,8 @@ export function Footer({ onOpenOnboarding }: { onOpenOnboarding: () => void }) {
           <a
             href="https://www.instagram.com/buenolherme/"
             target="_blank"
-            rel="noreferrer"
-            className="focus-ring inline-flex rounded text-secondary transition-colors hover:text-secondary-light"
+            rel="noopener noreferrer"
+            className="focus-ring inline-flex rounded text-[var(--color-accent-text)] transition-colors hover:text-secondary"
           >
             Instagram: @buenolherme
           </a>

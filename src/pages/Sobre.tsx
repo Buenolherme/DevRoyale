@@ -212,7 +212,7 @@ export function SobrePage() {
             <a
               href="https://www.instagram.com/buenolherme/"
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
             >
               Instagram: @buenolherme
             </a>

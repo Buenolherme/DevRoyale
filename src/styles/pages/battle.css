@@ -104,7 +104,7 @@
   background:
     radial-gradient(circle at center, rgba(139, 30, 30, 0.2), transparent 36%),
     radial-gradient(circle at 50% 60%, rgba(214, 168, 74, 0.1), transparent 42%),
-    linear-gradient(145deg, rgba(19, 19, 22, 0.98), rgba(7, 7, 9, 0.99));
+    linear-gradient(145deg, var(--surface-arena-elevated), var(--surface-arena));
   padding: 2rem;
   text-align: center;
   box-shadow: var(--shadow-card), inset 0 1px 0 rgba(255, 255, 255, 0.025);
@@ -285,7 +285,7 @@
   justify-content: space-between;
   gap: 0.75rem;
   border-color: var(--color-border);
-  background: var(--color-bg-secondary);
+  background: var(--surface-code-elevated);
 }
 
 .battle-editor-toolbar {
@@ -296,13 +296,13 @@
 .battle-editor-footer {
   border-top-width: 1px;
   padding: 0.65rem 1rem;
-  color: var(--color-text-muted);
+  color: var(--color-text-muted-on-code);
   font-size: 0.7rem;
 }
 
 .battle-editor-filename {
   margin-right: auto;
-  color: var(--color-text);
+  color: var(--color-text-on-code);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 0.8rem;
   font-weight: 700;
@@ -335,10 +335,10 @@
   border: 0;
   background:
     linear-gradient(90deg, rgba(214, 168, 74, 0.04) 1px, transparent 1px),
-    var(--color-bg);
+    var(--surface-code);
   background-size: 3.2rem 100%;
   padding: 1.25rem 1.4rem;
-  color: var(--color-text);
+  color: var(--color-text-on-code);
   caret-color: var(--color-secondary);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 0.9rem;
@@ -352,7 +352,7 @@
 }
 
 .battle-code-editor::placeholder {
-  color: color-mix(in srgb, var(--color-text-muted) 58%, transparent);
+  color: color-mix(in srgb, var(--color-text-muted-on-code) 58%, transparent);
   font-size: 0.76rem;
   font-weight: 800;
   letter-spacing: 0.12em;
@@ -925,9 +925,7 @@
   background:
     radial-gradient(circle at 82% 8%, rgba(139, 30, 30, 0.2), transparent 30%),
     linear-gradient(118deg, color-mix(in srgb, var(--color-bg-elevated) 98%, transparent), color-mix(in srgb, var(--color-bg) 96%, transparent));
-  box-shadow:
-    0 24px 64px rgba(0, 0, 0, 0.26),
-    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  box-shadow: var(--shadow-arena-strong);
 }
 
 .battle-command-header::before {
@@ -995,7 +993,7 @@
   border-radius: 1rem;
   background:
     radial-gradient(circle at 50% 20%, rgba(214, 168, 74, 0.18), transparent 60%),
-    rgba(9, 9, 12, 0.72);
+    var(--surface-arena-muted);
   color: var(--color-secondary);
   box-shadow: var(--shadow-glow-gold), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
@@ -1020,7 +1018,7 @@
   gap: 0.55rem;
   border: 1px solid color-mix(in srgb, var(--color-primary) 28%, var(--color-border));
   border-radius: 1rem;
-  background: rgba(7, 7, 9, 0.58);
+  background: var(--surface-arena-muted);
   padding: 0.9rem 1rem;
 }
 
@@ -1050,7 +1048,7 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   border-top: 1px solid var(--color-border);
-  background: rgba(5, 5, 7, 0.42);
+  background: color-mix(in srgb, var(--surface-arena-muted) 82%, transparent);
 }
 
 .battle-command-header__telemetry > div {
@@ -1084,10 +1082,7 @@
 
 .battle-setup-card {
   border-color: color-mix(in srgb, var(--color-secondary) 34%, var(--color-border));
-  box-shadow:
-    0 28px 72px rgba(0, 0, 0, 0.32),
-    0 0 48px color-mix(in srgb, var(--color-primary) 7%, transparent),
-    inset 0 1px 0 rgba(255, 255, 255, 0.045);
+  box-shadow: var(--shadow-arena-strong), 0 0 48px color-mix(in srgb, var(--color-primary) 7%, transparent);
 }
 
 .battle-preparation__mark {
@@ -1097,7 +1092,7 @@
   border-color: rgba(214, 168, 74, 0.34);
   background:
     radial-gradient(circle at 50% 25%, rgba(214, 168, 74, 0.16), transparent 62%),
-    rgba(7, 7, 9, 0.62);
+    var(--surface-arena-muted);
   box-shadow:
     0 0 32px rgba(214, 168, 74, 0.1),
     inset 0 0 24px rgba(214, 168, 74, 0.05);
@@ -1140,7 +1135,8 @@
 .battle-preparation__filters select {
   min-height: 3rem;
   border-color: color-mix(in srgb, var(--color-secondary) 18%, var(--color-border));
-  background-color: rgba(5, 5, 7, 0.78);
+  background-color: var(--surface-arena);
+  color: var(--color-text);
   font-weight: 750;
 }
 
@@ -1155,7 +1151,7 @@
   border-radius: 1.1rem;
   background:
     radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--color-primary) 12%, transparent), transparent 38%),
-    rgba(7, 7, 9, 0.54);
+    var(--surface-arena-muted);
   padding: 1.1rem;
 }
 
@@ -1242,7 +1238,7 @@
   min-height: 3.35rem;
   border-color: color-mix(in srgb, var(--color-primary) 36%, var(--color-border));
   background:
-    linear-gradient(90deg, color-mix(in srgb, var(--color-primary-muted) 72%, transparent), rgba(7, 7, 9, 0.72));
+    linear-gradient(90deg, color-mix(in srgb, var(--color-primary-muted) 72%, transparent), var(--surface-arena-muted));
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
 }
 
@@ -1288,9 +1284,7 @@
   background:
     linear-gradient(125deg, color-mix(in srgb, var(--color-bg-elevated) 98%, transparent), color-mix(in srgb, var(--color-bg) 94%, transparent));
   padding: clamp(1.2rem, 3vw, 1.75rem);
-  box-shadow:
-    0 20px 48px rgba(0, 0, 0, 0.24),
-    inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  box-shadow: var(--shadow-arena);
 }
 
 .battle-challenge-card::before {
@@ -1351,7 +1345,7 @@
   gap: 0.6rem;
   border: 1px solid var(--color-border);
   border-radius: 0.8rem;
-  background: rgba(5, 5, 7, 0.5);
+  background: var(--surface-arena-muted);
   padding: 0.65rem 0.75rem;
 }
 
@@ -1376,7 +1370,7 @@
   isolation: isolate;
   border-color: color-mix(in srgb, var(--color-secondary) 42%, var(--color-border));
   border-radius: 1.35rem;
-  background: #070709;
+  background: var(--surface-code);
   box-shadow:
     0 32px 76px rgba(0, 0, 0, 0.4),
     0 0 52px rgba(214, 168, 74, 0.08),
@@ -1410,7 +1404,7 @@
   min-height: 4rem;
   background:
     radial-gradient(circle at 72% 0%, rgba(139, 30, 30, 0.13), transparent 28%),
-    linear-gradient(180deg, rgba(24, 24, 29, 0.98), rgba(13, 13, 16, 0.98));
+    linear-gradient(180deg, var(--surface-code-elevated), var(--surface-code-footer));
   padding-inline: clamp(0.9rem, 2vw, 1.25rem);
 }
 
@@ -1447,7 +1441,7 @@
   display: flex;
   align-items: center;
   gap: 0.45rem;
-  color: var(--color-text-muted);
+  color: var(--color-text-muted-on-code);
   font-size: 0.64rem;
   font-weight: 750;
 }
@@ -1468,10 +1462,10 @@
   background:
     linear-gradient(90deg, rgba(214, 168, 74, 0.045) 1px, transparent 1px),
     linear-gradient(180deg, rgba(255, 255, 255, 0.012), transparent 20%),
-    #08080a;
+    var(--surface-code);
   background-size: 3.5rem 100%, 100% 100%, 100% 100%;
   padding: 1.55rem 1.65rem;
-  color: color-mix(in srgb, var(--color-text) 94%, var(--color-secondary));
+  color: color-mix(in srgb, var(--color-text-on-code) 94%, var(--color-secondary));
   font-size: 0.94rem;
   line-height: 1.85;
 }
@@ -1484,7 +1478,8 @@
 
 .battle-editor-footer {
   min-height: 2.8rem;
-  background: linear-gradient(180deg, rgba(15, 15, 18, 0.98), rgba(10, 10, 12, 0.98));
+  background: linear-gradient(180deg, var(--surface-code-footer), var(--surface-code));
+  color: var(--color-text-muted-on-code);
   padding-inline: clamp(0.9rem, 2vw, 1.25rem);
 }
 
@@ -1562,7 +1557,7 @@
     radial-gradient(circle at 20% 0%, rgba(139, 30, 30, 0.12), transparent 32%),
     color-mix(in srgb, var(--color-bg-elevated) 94%, transparent);
   padding: 0.85rem;
-  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.22);
+  box-shadow: var(--shadow-arena);
 }
 
 .battle-action {
@@ -1815,9 +1810,7 @@
     radial-gradient(circle at 96% 0%, rgba(214, 168, 74, 0.12), transparent 34%),
     linear-gradient(120deg, color-mix(in srgb, var(--color-bg-elevated) 97%, transparent), color-mix(in srgb, var(--color-bg) 91%, transparent));
   padding: 1.1rem 1.2rem;
-  box-shadow:
-    0 18px 42px rgba(0, 0, 0, 0.22),
-    inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  box-shadow: var(--shadow-arena);
 }
 
 .battle-hint::before {
@@ -1895,10 +1888,7 @@
     radial-gradient(circle at 6% 100%, rgba(139, 30, 30, 0.1), transparent 32%),
     linear-gradient(128deg, color-mix(in srgb, var(--color-bg-elevated) 98%, transparent), color-mix(in srgb, var(--color-bg) 95%, transparent));
   padding: clamp(1.2rem, 3vw, 1.65rem);
-  box-shadow:
-    0 26px 62px rgba(0, 0, 0, 0.3),
-    0 0 42px rgba(214, 168, 74, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  box-shadow: var(--shadow-arena-strong), 0 0 42px rgba(214, 168, 74, 0.06);
 }
 
 .battle-reference::before {
@@ -1961,7 +1951,7 @@
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--color-secondary) 22%, var(--color-border));
   border-radius: 1rem;
-  background: #070709;
+  background: var(--surface-code);
   box-shadow:
     0 18px 42px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.035);
@@ -1973,13 +1963,13 @@
   justify-content: space-between;
   gap: 1rem;
   border-bottom: 1px solid var(--color-border);
-  background: linear-gradient(180deg, rgba(24, 24, 28, 0.98), rgba(13, 13, 16, 0.98));
+  background: linear-gradient(180deg, var(--surface-code-elevated), var(--surface-code-footer));
   padding: 0.65rem 0.8rem 0.65rem 1rem;
 }
 
 .battle-reference__toolbar > span {
   overflow: hidden;
-  color: var(--color-text-muted);
+  color: var(--color-text-muted-on-code);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 0.7rem;
   font-weight: 750;
@@ -1992,7 +1982,7 @@
   max-height: 34rem;
   overflow: auto;
   padding: clamp(1rem, 2.5vw, 1.35rem);
-  color: color-mix(in srgb, var(--color-text) 91%, var(--color-secondary));
+  color: color-mix(in srgb, var(--color-text-on-code) 91%, var(--color-secondary));
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: clamp(0.76rem, 1.8vw, 0.88rem);
   line-height: 1.75;
@@ -2051,11 +2041,9 @@
   border-radius: 1rem;
   background:
     radial-gradient(circle at 8% 0%, rgba(214, 168, 74, 0.08), transparent 38%),
-    linear-gradient(120deg, rgba(18, 18, 22, 0.97), rgba(9, 9, 12, 0.98));
+    linear-gradient(120deg, var(--surface-arena-elevated), var(--surface-arena));
   padding: 0.9rem 1rem;
-  box-shadow:
-    0 16px 38px rgba(0, 0, 0, 0.22),
-    inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  box-shadow: var(--shadow-arena);
 }
 
 .battle-integrity::before {
@@ -2070,7 +2058,7 @@
   border-color: color-mix(in srgb, var(--color-danger) 48%, var(--color-border));
   background:
     radial-gradient(circle at 8% 0%, rgba(139, 30, 30, 0.18), transparent 40%),
-    linear-gradient(120deg, rgba(22, 14, 16, 0.98), rgba(10, 9, 11, 0.98));
+    linear-gradient(120deg, color-mix(in srgb, var(--surface-arena-elevated) 88%, var(--color-danger-muted)), var(--surface-arena));
 }
 
 .battle-integrity--compromised::before {
@@ -2197,7 +2185,7 @@
   border-radius: 1.25rem;
   background:
     radial-gradient(circle at 90% 0%, rgba(139, 30, 30, 0.16), transparent 34%),
-    linear-gradient(140deg, rgba(25, 25, 30, 0.99), rgba(10, 10, 13, 0.99));
+    linear-gradient(140deg, var(--surface-modal), var(--surface-arena));
   padding: clamp(1.25rem, 4vw, 1.8rem);
   box-shadow:
     0 34px 90px rgba(0, 0, 0, 0.55),
@@ -2240,7 +2228,7 @@
   display: grid;
   min-width: 0;
   grid-template-columns: 3.15rem minmax(0, 1fr);
-  background: #08080a;
+  background: var(--surface-code);
 }
 
 .battle-editor-gutter {
@@ -2249,8 +2237,8 @@
   min-width: 0;
   overflow: hidden;
   border-right: 1px solid color-mix(in srgb, var(--color-secondary) 14%, var(--color-border));
-  background: linear-gradient(90deg, #0c0c0f, #09090c);
-  color: color-mix(in srgb, var(--color-text-muted) 66%, transparent);
+  background: linear-gradient(90deg, var(--surface-code-footer), var(--surface-code));
+  color: color-mix(in srgb, var(--color-text-muted-on-code) 66%, transparent);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 0.72rem;
   line-height: 1.739rem;
@@ -2281,7 +2269,7 @@
   background:
     linear-gradient(90deg, rgba(214, 168, 74, 0.045) 1px, transparent 1px),
     linear-gradient(180deg, rgba(255, 255, 255, 0.012), transparent 20%),
-    #08080a;
+    var(--surface-code);
   background-size: 3.5rem 100%, 100% 100%, 100% 100%;
 }
 

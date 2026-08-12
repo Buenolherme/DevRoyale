@@ -12,15 +12,15 @@ interface ButtonClassNameOptions {
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
-    'bg-primary text-white border border-primary-hover/30 shadow-[var(--shadow-glow-primary)] hover:bg-primary-hover hover:shadow-[var(--shadow-card-hover)] active:scale-[0.98]',
+    'bg-primary text-[var(--color-on-brand)] border border-primary-hover/30 shadow-[var(--shadow-glow-primary)] hover:bg-primary-hover hover:shadow-[var(--shadow-card-hover)] active:scale-[0.98]',
   secondary:
     'bg-background-elevated text-foreground border border-border hover:border-secondary/40 hover:bg-secondary-muted active:scale-[0.98]',
   ghost:
     'bg-transparent text-foreground border border-transparent hover:bg-background-elevated hover:border-border active:scale-[0.98]',
   danger:
-    'bg-danger text-white border border-danger/30 hover:opacity-90 active:scale-[0.98]',
+    'bg-danger text-[var(--color-on-brand)] border border-danger/30 hover:opacity-90 active:scale-[0.98]',
   gold:
-    'bg-secondary text-[#151515] border border-secondary-light/50 shadow-[var(--shadow-glow-gold)] hover:brightness-105 hover:shadow-[var(--shadow-card-hover)] active:scale-[0.98]',
+    'bg-secondary text-[var(--color-on-gold)] border border-secondary-light/50 shadow-[var(--shadow-glow-gold)] hover:brightness-105 hover:shadow-[var(--shadow-card-hover)] active:scale-[0.98]',
 }
 
 const sizeStyles: Record<ButtonSize, string> = {
