@@ -14,8 +14,8 @@ export function StudiesIntro({ isAuthenticated, scoutMessage }: StudiesIntroProp
     <>
       <PageHeader
         icon={<ModeIcon mode="studies" />}
-        title="Área dos Estudos"
-        description="Aprenda no seu ritmo. Estudos ajudam, mas não bloqueiam as arenas."
+        title="Treinamento de Devs"
+        description="Reforce fundamentos no seu ritmo e chegue mais preparado à Arena."
       >
         <Badge variant="gold">Centro opcional</Badge>
       </PageHeader>

@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react'
+import { useRef } from 'react'
 import { Button, getButtonClassName } from '@/components/ui'
+import { useDialogFocus } from '@/hooks'
 
 interface BattleExitDialogProps {
   open: boolean
@@ -12,31 +13,28 @@ export function BattleExitDialog({
   onContinue,
   onExit,
 }: BattleExitDialogProps) {
+  const dialogRef = useRef<HTMLElement>(null)
   const continueButtonRef = useRef<HTMLButtonElement>(null)
 
-  useEffect(() => {
-    if (!open) return
-
-    continueButtonRef.current?.focus()
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onContinue()
-    }
-
-    document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [onContinue, open])
+  useDialogFocus({
+    open,
+    containerRef: dialogRef,
+    initialFocusRef: continueButtonRef,
+    onClose: onContinue,
+  })
 
   if (!open) return null
 
   return (
     <div className="battle-exit-dialog" role="presentation">
       <section
+        ref={dialogRef}
         className="battle-exit-dialog__panel"
         role="dialog"
         aria-modal="true"
         aria-labelledby="battle-exit-title"
         aria-describedby="battle-exit-description"
+        tabIndex={-1}
       >
         <span className="battle-exit-dialog__eyebrow">Protocolo de integridade</span>
         <h2 id="battle-exit-title">Batalha em andamento</h2>

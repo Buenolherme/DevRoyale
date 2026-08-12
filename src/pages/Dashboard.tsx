@@ -41,15 +41,15 @@ const dashboardCards: DashboardCard[] = [
     accent: 'primary' as const,
   },
   {
-    title: 'Área dos Estudos',
-    description: 'Continue suas trilhas de aprendizado.',
+    title: 'Treinamento de Devs',
+    description: 'Reforce fundamentos para chegar preparado aos duelos.',
     icon: 'studies',
     to: ROUTES.AREA_ESTUDOS,
     accent: 'gold' as const,
   },
   {
     title: 'Bug Arena',
-    description: 'Caçe e corrija bugs no código.',
+    description: 'Encontre e corrija bugs no código.',
     icon: 'bug',
     to: ROUTES.BUG_ARENA,
     accent: 'primary' as const,
@@ -267,7 +267,13 @@ export function DashboardPage() {
               </div>
             ) : (
               <div className="rounded-xl border border-dashed border-border bg-background p-5 text-sm text-muted">
-                Sua primeira aula, correção de bug ou batalha aparecerá aqui.
+                <p>Sua primeira batalha, correção de bug ou aula aparecerá aqui.</p>
+                <Link
+                  to={ROUTES.BATALHA_DEVS}
+                  className="focus-ring mt-3 inline-flex rounded font-bold text-secondary hover:text-secondary-light"
+                >
+                  Entrar na Batalha
+                </Link>
               </div>
             )}
           </CardContent>

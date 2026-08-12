@@ -8,6 +8,7 @@ export const ROUTES = {
   BUG_ARENA: '/bug-arena',
   INTERVIEW_MODE: '/interview-mode',
   PERFIL: '/perfil',
+  SOBRE: '/sobre',
 } as const
 
 export type RoutePath = (typeof ROUTES)[keyof typeof ROUTES]

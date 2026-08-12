@@ -55,7 +55,7 @@ export function InterviewModePage() {
       <PageHeader
         icon={<ModeIcon mode="interview" />}
         title="Interview Mode"
-        description="Pratique perguntas de entrevista técnica — simulação sem IA na V1.0."
+        description="Pratique perguntas de entrevista técnica em uma experiência guiada da V1.5."
       >
         <Badge variant="gold">Beta</Badge>
       </PageHeader>

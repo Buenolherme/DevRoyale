@@ -9,12 +9,13 @@ import { Logo } from './Logo'
 
 const navLinks = [
   { to: ROUTES.BATALHA_DEVS, label: 'Batalha' },
-  { to: ROUTES.AREA_ESTUDOS, label: 'Estudos' },
+  { to: ROUTES.AREA_ESTUDOS, label: 'Treinamento' },
   { to: ROUTES.BUG_ARENA, label: 'Bug Arena' },
   { to: ROUTES.INTERVIEW_MODE, label: 'Interview' },
+  { to: ROUTES.SOBRE, label: 'Sobre' },
 ]
 
-export function Header() {
+export function Header({ onOpenOnboarding }: { onOpenOnboarding: () => void }) {
   const location = useLocation()
   const navigate = useNavigate()
   const { theme, toggleTheme } = useTheme()
@@ -95,6 +96,7 @@ export function Header() {
             <Link
               key={link.to}
               to={link.to}
+              aria-current={location.pathname === link.to ? 'page' : undefined}
               className={cn(
                 'rounded-xl px-3.5 py-2 text-sm font-semibold transition-all duration-200 focus-ring',
                 location.pathname === link.to
@@ -222,6 +224,7 @@ export function Header() {
               <Link
                 key={link.to}
                 to={link.to}
+                aria-current={location.pathname === link.to ? 'page' : undefined}
                 onClick={() => setMobileOpen(false)}
                 className={cn(
                   'rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-200 focus-ring',
@@ -233,6 +236,16 @@ export function Header() {
                 {link.label}
               </Link>
             ))}
+            <button
+              type="button"
+              onClick={() => {
+                setMobileOpen(false)
+                onOpenOnboarding()
+              }}
+              className="rounded-xl px-4 py-3 text-left text-sm font-semibold text-muted transition-all duration-200 hover:bg-background-elevated hover:text-foreground focus-ring"
+            >
+              Como funciona
+            </button>
             <div className="mt-3 flex gap-2 border-t border-border pt-3">
               <Button variant="ghost" size="sm" onClick={toggleTheme} className="flex-1">
                 {theme === 'light' ? '🌙 Escuro' : '☀️ Claro'}

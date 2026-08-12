@@ -317,7 +317,7 @@ export function AreaEstudosPage() {
     <div className="page-container study-hub">
       <StudiesIntro isAuthenticated={isAuthenticated} scoutMessage={scoutMessage} />
 
-      <section className="study-hub-stats" aria-label="Resumo da Área dos Estudos">
+      <section className="study-hub-stats" aria-label="Resumo do Treinamento de Devs">
         <Card variant="premium" className="study-hub-stat">
           <span className="study-hub-stat__value">{studyTopicOptions.length}</span>
           <span className="study-hub-stat__label">Temas para explorar</span>

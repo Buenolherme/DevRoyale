@@ -1,5 +1,5 @@
 import { createBrowserRouter } from 'react-router-dom'
-import { AppLayout } from '@/components/layout'
+import { AppLayout, RouteErrorFallback } from '@/components/layout'
 import { ROUTES } from './paths'
 import { ProtectedRoute } from './ProtectedRoute'
 import { GuestOnlyRoute } from './GuestOnlyRoute'
@@ -14,11 +14,13 @@ import {
   LoginPage,
   NotFoundPage,
   PerfilPage,
+  SobrePage,
 } from './lazyPages'
 
 export const router = createBrowserRouter([
   {
     element: <AppLayout />,
+    errorElement: <RouteErrorFallback />,
     children: [
       { path: ROUTES.HOME, element: <HomePage /> },
       {
@@ -49,6 +51,7 @@ export const router = createBrowserRouter([
       { path: ROUTES.AREA_ESTUDOS, element: <AreaEstudosPage /> },
       { path: ROUTES.BUG_ARENA, element: <BugArenaPage /> },
       { path: ROUTES.INTERVIEW_MODE, element: <InterviewModePage /> },
+      { path: ROUTES.SOBRE, element: <SobrePage /> },
       {
         path: ROUTES.PERFIL,
         element: (

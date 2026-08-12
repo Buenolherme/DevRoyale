@@ -24,15 +24,20 @@ export function NotFoundPage() {
 
       <Card variant="premium" className="mx-auto max-w-2xl text-center">
         <CardHeader>
-          <CardTitle className="text-2xl">Esta arena ainda não foi desbloqueada</CardTitle>
+          <CardTitle className="text-2xl">Destino indisponível</CardTitle>
           <CardDescription>
-            Volte para a página inicial e escolha um dos modos disponíveis na V1.0.
+            O endereço pode ter mudado. Volte ao início ou entre diretamente na Batalha de Devs.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Link to={ROUTES.HOME} className={getButtonClassName({ variant: 'gold', size: 'lg' })}>
-            Voltar ao início
-          </Link>
+          <div className="flex flex-col justify-center gap-3 sm:flex-row">
+            <Link to={ROUTES.BATALHA_DEVS} className={getButtonClassName({ size: 'lg' })}>
+              Entrar na Batalha
+            </Link>
+            <Link to={ROUTES.HOME} className={getButtonClassName({ variant: 'secondary', size: 'lg' })}>
+              Voltar ao início
+            </Link>
+          </div>
         </CardContent>
       </Card>
     </div>

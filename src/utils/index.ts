@@ -6,6 +6,15 @@ export {
 } from './battleValidation'
 export type { BattleValidationResult } from './battleValidation'
 export {
+  battleProblemCategories,
+  buildBattleProblemReport,
+  getBasicBrowserName,
+} from './battleProblemReport'
+export type {
+  BattleProblemCategory,
+  BattleProblemContext,
+} from './battleProblemReport'
+export {
   STUDY_HISTORY_STORAGE_KEY,
   getCompletedStudyLessonIds,
   getCompletedStudyLessons,

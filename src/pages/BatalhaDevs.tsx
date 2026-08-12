@@ -6,6 +6,7 @@ import {
   BattleFilters,
   BattleHintPanel,
   BattleIntegrityIndicator,
+  BattleProblemReport,
   BattleReferenceSolution,
   BattleResultFeedback,
 } from '@/components/battle'
@@ -163,6 +164,7 @@ export function BatalhaDevsPage() {
     rivalDurationByDifficulty[initialChallenge.difficulty],
   )
   const [battleRunId, setBattleRunId] = useState(0)
+  const [problemReportOpen, setProblemReportOpen] = useState(false)
 
   const compatibleChallenges = useMemo(
     () =>
@@ -404,12 +406,12 @@ export function BatalhaDevsPage() {
     setResult({
       status: 'correct',
       message: !user
-        ? 'Missão concluída nesta sessão! Entre para salvar XP, nível e conquistas.'
+        ? 'Vitória confirmada nesta sessão. Entre para salvar XP, nível e conquistas.'
         : xpResult && !xpResult.persisted
-          ? 'Missão concluída, mas o progresso não pôde ser salvo neste dispositivo.'
+          ? 'Vitória confirmada, mas o progresso não pôde ser salvo neste dispositivo.'
         : xpResult?.duplicate
-          ? 'Missão concluída novamente. Este desafio não concede XP repetido.'
-          : 'Missão concluída!',
+          ? 'Vitória repetida. Este desafio não concede XP novamente.'
+          : 'Vitória confirmada!',
       xpAwarded: xpResult?.xpAwarded,
       leveledUp: xpResult?.leveledUp,
       newAchievements: xpResult?.newAchievements.map((achievement) => achievement.name),
@@ -421,6 +423,8 @@ export function BatalhaDevsPage() {
     setCode(nextCode)
     setResult(null)
   }, [])
+
+  const closeProblemReport = useCallback(() => setProblemReportOpen(false), [])
 
   const handleProtectedChallengeAction = (event: { preventDefault: () => void }) => {
     if (!battleIsActive) return
@@ -437,6 +441,18 @@ export function BatalhaDevsPage() {
         onContinue={cancelNavigation}
         onExit={confirmNavigation}
       />
+      <BattleProblemReport
+        key={currentChallenge.id}
+        open={problemReportOpen}
+        onClose={closeProblemReport}
+        code={code}
+        context={{
+          challengeId: currentChallenge.id,
+          challengeTitle: currentChallenge.title,
+          language: languageLabel[currentChallenge.language],
+          difficulty: difficultyLabel[currentChallenge.difficulty],
+        }}
+      />
 
       <header className="battle-command-header">
         <div className="battle-command-header__main">
@@ -451,11 +467,13 @@ export function BatalhaDevsPage() {
             <p>Analise o desafio, assuma o editor e vença o duelo com uma solução precisa.</p>
           </div>
 
-          <div className="battle-command-header__status" role="status">
+          <div className="battle-command-header__status">
             <span>Status da arena</span>
             <Badge
               variant={battleStatusVariant}
               className="battle-command-header__status-badge normal-case tracking-normal"
+              role="status"
+              aria-live="polite"
             >
               <i
                 className={`battle-command-header__signal battle-command-header__signal--${battleStatusLabel
@@ -465,6 +483,13 @@ export function BatalhaDevsPage() {
               />
               {battleStatusLabel}
             </Badge>
+            <button
+              type="button"
+              className="battle-report-trigger focus-ring"
+              onClick={() => setProblemReportOpen(true)}
+            >
+              Reportar problema
+            </button>
           </div>
         </div>
 
@@ -479,7 +504,7 @@ export function BatalhaDevsPage() {
           </div>
           <div>
             <span>Formato</span>
-            <strong>Duelo de código</strong>
+            <strong>Casual · Simulada</strong>
           </div>
           <div className="battle-command-header__ranked">
             <span>Ranked online</span>
@@ -575,6 +600,10 @@ export function BatalhaDevsPage() {
               </div>
             </CardContent>
           </Card>
+
+          <p className="battle-mobile-recommendation">
+            Para uma experiência completa na Arena, recomendamos computador ou notebook.
+          </p>
 
           <BattleEditor
             language={currentChallenge.language}
