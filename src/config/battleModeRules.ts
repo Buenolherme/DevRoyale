@@ -4,6 +4,7 @@ export type BattleMode = 'casual' | 'ranked'
 
 export interface BattleModeRules {
   allowHints: boolean
+  allowContextualOutputFeedback: boolean
   hintsUnavailableMessage: string | null
   trackIntegrity: boolean
   integrityStartsAt: BattleDifficulty
@@ -23,6 +24,7 @@ const difficultyRank: Record<BattleDifficulty, number> = {
 export const battleModeRules: Record<BattleMode, BattleModeRules> = {
   casual: {
     allowHints: true,
+    allowContextualOutputFeedback: true,
     hintsUnavailableMessage: null,
     trackIntegrity: true,
     integrityStartsAt: 'basic',
@@ -33,6 +35,7 @@ export const battleModeRules: Record<BattleMode, BattleModeRules> = {
   },
   ranked: {
     allowHints: false,
+    allowContextualOutputFeedback: false,
     hintsUnavailableMessage: 'Assistência da Arena indisponível em partidas ranqueadas.',
     trackIntegrity: true,
     integrityStartsAt: 'never',

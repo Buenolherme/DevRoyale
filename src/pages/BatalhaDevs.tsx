@@ -378,7 +378,11 @@ export function BatalhaDevsPage() {
   const handleExecute = () => {
     if (battleOutcome !== 'active') return
 
-    const validation = validateBattleSolution(codeRef.current, currentChallenge)
+    const validation = validateBattleSolution(
+      codeRef.current,
+      currentChallenge,
+      currentBattleMode,
+    )
 
     if (!validation.isValid) {
       setResult({

@@ -1,4 +1,4 @@
-import { createBrowserRouter } from 'react-router-dom'
+import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { AppLayout, RouteErrorFallback } from '@/components/layout'
 import { ROUTES } from './paths'
 import { ProtectedRoute } from './ProtectedRoute'
@@ -48,9 +48,12 @@ export const router = createBrowserRouter([
         ),
       },
       { path: ROUTES.BATALHA_DEVS, element: <BatalhaDevsPage /> },
+      { path: '/batalha', element: <Navigate to={ROUTES.BATALHA_DEVS} replace /> },
       { path: ROUTES.AREA_ESTUDOS, element: <AreaEstudosPage /> },
+      { path: '/estudos', element: <Navigate to={ROUTES.AREA_ESTUDOS} replace /> },
       { path: ROUTES.BUG_ARENA, element: <BugArenaPage /> },
       { path: ROUTES.INTERVIEW_MODE, element: <InterviewModePage /> },
+      { path: '/interview', element: <Navigate to={ROUTES.INTERVIEW_MODE} replace /> },
       { path: ROUTES.SOBRE, element: <SobrePage /> },
       {
         path: ROUTES.PERFIL,

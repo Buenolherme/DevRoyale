@@ -4,10 +4,16 @@ import type {
   BattlePatternRule,
   BattleValidationStrategy,
 } from '@/types'
+import { battleModeRules, type BattleMode } from '@/config/battleModeRules'
+
+export type BattleValidationIssue =
+  | 'format-mismatch'
+  | 'wrong-output'
 
 export interface BattleValidationResult {
   isValid: boolean
   message?: string
+  issue?: BattleValidationIssue
 }
 
 interface FunctionSignature {
@@ -360,6 +366,34 @@ function countOccurrences(source: string, value: string): number {
   return source.match(new RegExp(`\\b${escapedValue}\\b`, 'g'))?.length ?? 0
 }
 
+function extractReturnExpression(
+  source: string,
+  language: BattleLanguage,
+  preferredName?: string,
+): string | null {
+  const explicitReturn = source.match(/\breturn\s+([^;\n}]+)\s*;?/i)?.[1]?.trim()
+  if (explicitReturn) return explicitReturn
+
+  if (language !== 'javascript' || !preferredName) return null
+
+  const escapedName = preferredName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const implicitArrow = source.match(
+    new RegExp(
+      `(?:const|let|var)\\s+${escapedName}\\s*=\\s*(?:async\\s*)?(?:\\([^)]*\\)|[a-zA-Z_$][\\w$]*)\\s*=>\\s*(?!\\{)([^;\\n]+)`,
+      'i',
+    ),
+  )?.[1]?.trim()
+
+  return implicitArrow ?? null
+}
+
+function getParameterIdentifier(parameter: string): string {
+  return parameter
+    .replace(/^\.\.\./, '')
+    .split(/[=:]/, 1)[0]
+    .trim()
+}
+
 function validateFunctionSolution(
   answer: string,
   challenge: BattleChallenge,
@@ -428,6 +462,68 @@ function validateFunctionSolution(
     }
   }
 
+  const referenceReturnExpression = extractReturnExpression(
+    referenceSolution,
+    challenge.language,
+    requiredFunctionName,
+  )
+  const answerReturnExpression = extractReturnExpression(
+    meaningfulSource,
+    challenge.language,
+    requiredFunctionName,
+  )
+  if (referenceReturnExpression && answerReturnExpression && referenceSignature) {
+    const inputSamples = [
+      [0, 0, 0],
+      [1, 2, 3],
+      [5, -2, 4],
+      [-3, -4, 2],
+    ]
+    let comparedSamples = 0
+
+    for (const sample of inputSamples) {
+      const referenceValues = new Map(
+        referenceSignature.parameters.map((parameter, index) => [
+          getParameterIdentifier(parameter),
+          sample[index] ?? 0,
+        ]),
+      )
+      const answerValues = new Map(
+        answerSignature.parameters.map((parameter, index) => [
+          getParameterIdentifier(parameter),
+          sample[index] ?? 0,
+        ]),
+      )
+      const referenceResult = resolveNumericExpression(
+        referenceReturnExpression,
+        referenceSolution,
+        referenceValues,
+      )
+      const answerResult = resolveNumericExpression(
+        answerReturnExpression,
+        meaningfulSource,
+        answerValues,
+      )
+
+      if (referenceResult === null || answerResult === null) continue
+      comparedSamples += 1
+
+      if (referenceResult !== answerResult) {
+        return {
+          isValid: false,
+          message: 'A função foi criada, mas o valor retornado não atende aos casos do desafio.',
+        }
+      }
+    }
+
+    if (comparedSamples > 0 && comparedSamples < inputSamples.length) {
+      return {
+        isValid: false,
+        message: 'A função foi criada, mas o retorno não pôde ser validado com segurança.',
+      }
+    }
+  }
+
   const prompt = normalizeSearchText(
     [challenge.title, challenge.statement, ...challenge.instructions].join(' '),
   )
@@ -462,9 +558,14 @@ function validateFunctionSolution(
       description: 'calcular a média dos valores',
     },
     {
-      prompt: /vogal/,
-      code: /aeiou|vogal/i,
+      prompt: /voga(?:l|is)/,
+      code: /["']aeiou["']|\bin\s+["']aeiou["']|\.includes\s*\(|\bsum\s*\(|\.filter\s*\(|\bfor\b|\bwhile\b/i,
       description: 'identificar as vogais consideradas',
+    },
+    {
+      prompt: /tres ou mais caracteres|nomes com tres letras/,
+      code: /\blen\s*\(|\.length\b|\.filter\s*\(|\bfor\b|\bwhile\b/i,
+      description: 'filtrar os nomes pelo tamanho solicitado',
     },
     {
       prompt: /duplicad|sem valores repetidos/,
@@ -498,7 +599,7 @@ function validateFunctionSolution(
     },
     {
       prompt: /cache|memoiz/,
-      code: /\bcache\b|\bMap\b|lru_cache|memo/i,
+      code: /\bcache\s*=|\bMap\s*\(|lru_cache|\{\s*\}/i,
       description: 'armazenar resultados no cache',
     },
   ]
@@ -526,12 +627,47 @@ function validateFunctionSolution(
 }
 
 function extractOutputExpression(answer: string, language: BattleLanguage): string | null {
-  const pattern =
+  const callPattern =
     language === 'python'
-      ? /\bprint\s*\(([\s\S]*?)\)\s*(?:\n|$)/i
-      : /\bconsole\s*\.\s*log\s*\(([\s\S]*?)\)\s*;?/i
+      ? /\bprint\s*\(/i
+      : /\bconsole\s*\.\s*log\s*\(/i
+  const callMatch = callPattern.exec(answer)
+  if (callMatch?.index === undefined) return null
 
-  return answer.match(pattern)?.[1]?.trim() ?? null
+  const expressionStart = callMatch.index + callMatch[0].length
+  let depth = 1
+  let activeQuote: '"' | "'" | '`' | null = null
+
+  for (let index = expressionStart; index < answer.length; index += 1) {
+    const character = answer[index]
+    let backslashCount = 0
+    for (
+      let escapeIndex = index - 1;
+      escapeIndex >= 0 && answer[escapeIndex] === '\\';
+      escapeIndex -= 1
+    ) {
+      backslashCount += 1
+    }
+    const escaped = backslashCount % 2 === 1
+
+    if (activeQuote) {
+      if (character === activeQuote && !escaped) activeQuote = null
+      continue
+    }
+
+    if ((character === '"' || character === "'" || character === '`') && !escaped) {
+      activeQuote = character
+      continue
+    }
+
+    if (character === '(') depth += 1
+    if (character !== ')') continue
+
+    depth -= 1
+    if (depth === 0) return answer.slice(expressionStart, index).trim()
+  }
+
+  return null
 }
 
 function extractStringAssignments(source: string): Map<string, string> {
@@ -551,11 +687,14 @@ function resolveTextExpression(expression: string, source: string): string | nul
   const directVariable = assignments.get(normalizedExpression)
   if (directVariable !== undefined) return directVariable
 
-  const quotedMatch = normalizedExpression.match(/^f?(["'`])([\s\S]*)\1$/i)
-  if (quotedMatch) {
-    return quotedMatch[2]
-      .replace(/\$\{\s*([a-zA-Z_$][\w$]*)\s*\}/g, (_, name: string) => assignments.get(name) ?? `{${name}}`)
-      .replace(/\{\s*([a-zA-Z_$][\w$]*)\s*\}/g, (_, name: string) => assignments.get(name) ?? `{${name}}`)
+  const arrayJoinMatch = normalizedExpression.match(
+    /^\[\s*((?:["'`][^"'`]*["'`]\s*,\s*)*["'`][^"'`]*["'`])\s*\]\s*\.\s*join\s*\(\s*(["'`])([\s\S]*?)\2\s*\)$/,
+  )
+  if (arrayJoinMatch) {
+    const items = [...arrayJoinMatch[1].matchAll(/(["'`])([^"'`]*)\1/g)].map(
+      (match) => match[2],
+    )
+    if (items.length > 0) return items.join(arrayJoinMatch[3])
   }
 
   const parts = normalizedExpression.split(/\s*\+\s*/)
@@ -569,6 +708,13 @@ function resolveTextExpression(expression: string, source: string): string | nul
     if (resolvedParts.every((part) => part !== undefined)) {
       return resolvedParts.join('')
     }
+  }
+
+  const quotedMatch = normalizedExpression.match(/^f?(["'`])([\s\S]*)\1$/i)
+  if (quotedMatch) {
+    return quotedMatch[2]
+      .replace(/\$\{\s*([a-zA-Z_$][\w$]*)\s*\}/g, (_, name: string) => assignments.get(name) ?? `{${name}}`)
+      .replace(/\{\s*([a-zA-Z_$][\w$]*)\s*\}/g, (_, name: string) => assignments.get(name) ?? `{${name}}`)
   }
 
   return null
@@ -647,8 +793,12 @@ function evaluateSafeArithmetic(expression: string, values: Map<string, number>)
     : null
 }
 
-function resolveNumericExpression(expression: string, source: string): number | null {
-  const values = new Map<string, number>()
+function resolveNumericExpression(
+  expression: string,
+  source: string,
+  initialValues: Map<string, number> = new Map(),
+): number | null {
+  const values = new Map(initialValues)
   const assignmentPattern = /(?:\b(?:const|let|var)\s+)?([a-zA-Z_$][\w$]*)\s*=\s*([^;\n]+)/g
 
   for (const match of source.matchAll(assignmentPattern)) {
@@ -669,9 +819,84 @@ function getExpectedOutput(challenge: BattleChallenge): unknown {
   return undefined
 }
 
+function isConservativeTextFormatMismatch(actual: string, expected: string): boolean {
+  if (!actual || !expected || actual === expected) return false
+  if (/\p{N}/u.test(actual) || /\p{N}/u.test(expected)) return false
+
+  const normalizeFormatting = (value: string) =>
+    value
+      .normalize('NFKC')
+      .toLocaleLowerCase('pt-BR')
+      .replace(/[\p{P}\p{Z}\s]/gu, '')
+
+  const normalizedActual = normalizeFormatting(actual)
+  const normalizedExpected = normalizeFormatting(expected)
+
+  return normalizedActual.length >= 4 && normalizedActual === normalizedExpected
+}
+
+function decodeSimpleTextEscapes(value: string): string {
+  const escapeValues: Record<string, string> = {
+    '\\': '\\',
+    n: '\n',
+    r: '\r',
+    t: '\t',
+    '"': '"',
+    "'": "'",
+    '`': '`',
+  }
+
+  return value.replace(/\\(\\|n|r|t|"|'|`)/g, (_, escaped: string) =>
+    escapeValues[escaped] ?? escaped,
+  )
+}
+
+function getWrongOutputResult(
+  mode: BattleMode,
+  casualMessage: string,
+): BattleValidationResult {
+  return {
+    isValid: false,
+    issue: 'wrong-output',
+    message: battleModeRules[mode].allowContextualOutputFeedback
+      ? casualMessage
+      : 'Saída incorreta. Revise sua solução.',
+  }
+}
+
+function getTextOutputMismatchResult(
+  actual: string,
+  expected: string,
+  challenge: BattleChallenge,
+  mode: BattleMode,
+): BattleValidationResult {
+  const modeRules = battleModeRules[mode]
+
+  if (!modeRules.allowContextualOutputFeedback) {
+    return getWrongOutputResult(mode, '')
+  }
+
+  const allowsBeginnerContext =
+    challenge.difficulty === 'never' || challenge.difficulty === 'basic'
+  if (allowsBeginnerContext && isConservativeTextFormatMismatch(actual, expected)) {
+    return {
+      isValid: false,
+      issue: 'format-mismatch',
+      message:
+        'Você está muito perto. A lógica parece correta, mas a saída não está exatamente no formato esperado. Confira pontuação, espaços e letras maiúsculas/minúsculas.',
+    }
+  }
+
+  return getWrongOutputResult(
+    mode,
+    'Seu código executou, mas a saída não corresponde exatamente ao resultado esperado.',
+  )
+}
+
 function validateOutputSolution(
   answer: string,
   challenge: BattleChallenge,
+  mode: BattleMode,
 ): BattleValidationResult {
   const outputExpression = extractOutputExpression(answer, challenge.language)
   if (!outputExpression) {
@@ -691,25 +916,19 @@ function validateOutputSolution(
     const actualOutput = resolveNumericExpression(outputExpression, answer)
     return actualOutput === expectedOutput
       ? { isValid: true }
-      : {
-          isValid: false,
-          message: 'Seu código executou, mas a saída não corresponde ao resultado esperado.',
-        }
+      : getWrongOutputResult(
+          mode,
+          'Seu código executou, mas a saída não corresponde ao resultado esperado.',
+        )
   }
 
-  const actualOutput = resolveTextExpression(outputExpression, answer)
-  const normalizedExpected = normalizeWhitespace(normalizeQuotes(String(expectedOutput)))
-    .toLocaleLowerCase('pt-BR')
-  const normalizedActual = actualOutput
-    ? normalizeWhitespace(normalizeQuotes(actualOutput)).toLocaleLowerCase('pt-BR')
-    : ''
+  const resolvedOutput = resolveTextExpression(outputExpression, answer)
+  const actualOutput = resolvedOutput === null ? null : decodeSimpleTextEscapes(resolvedOutput)
+  const expectedText = String(expectedOutput)
 
-  return normalizedActual === normalizedExpected
+  return actualOutput === expectedText
     ? { isValid: true }
-    : {
-        isValid: false,
-        message: 'Seu código executou, mas a saída não corresponde ao texto esperado.',
-      }
+    : getTextOutputMismatchResult(actualOutput ?? '', expectedText, challenge, mode)
 }
 
 function extractSqlTables(source: string): string[] {
@@ -1039,6 +1258,7 @@ export function normalizeBattleAnswer(answer: string, language: BattleLanguage):
 export function validateBattleSolution(
   answer: string,
   challenge: BattleChallenge,
+  mode: BattleMode = 'casual',
 ): BattleValidationResult {
   if (!hasMeaningfulCode(answer, challenge.language)) {
     return {
@@ -1071,19 +1291,20 @@ export function validateBattleSolution(
   const techniqueFailure = validateExplicitTechniques(answer, challenge)
   if (techniqueFailure) return techniqueFailure
 
+  const strategy = resolveStrategy(challenge)
   const referenceSolution = challenge.referenceSolution ?? challenge.expectedAnswer
   if (
+    strategy !== 'output' &&
     normalizeBattleAnswer(answer, challenge.language) ===
     normalizeBattleAnswer(referenceSolution, challenge.language)
   ) {
     return { isValid: true }
   }
 
-  const strategy = resolveStrategy(challenge)
   if (strategy === 'function') return validateFunctionSolution(answer, challenge)
   if (strategy === 'query') return validateSqlSolution(answer, challenge)
   if (strategy === 'markup') return validateMarkupSolution(answer, challenge)
-  return validateOutputSolution(answer, challenge)
+  return validateOutputSolution(answer, challenge, mode)
 }
 
 export function validateBattleAnswer(
