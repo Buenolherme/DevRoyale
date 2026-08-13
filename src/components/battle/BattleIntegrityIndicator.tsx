@@ -72,7 +72,8 @@ export function BattleIntegrityIndicator({
           role="status"
           aria-live="polite"
         >
-          {notice.message}
+          <strong className="battle-integrity__notice-title">{notice.title}</strong>
+          <span>{notice.message}</span>
         </div>
       )}
     </section>

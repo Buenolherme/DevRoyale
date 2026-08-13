@@ -14,6 +14,11 @@ export interface BattleModeRules {
   playAlertSound: boolean
 }
 
+export interface IntegrityVisualNoticeContent {
+  title: string
+  message: string
+}
+
 const difficultyRank: Record<BattleDifficulty, number> = {
   never: 0,
   basic: 1,
@@ -58,36 +63,25 @@ export function shouldTrackBattleIntegrity(
   )
 }
 
-export function getIntegritySpeechMessage(
-  mode: BattleMode,
+export function getIntegrityVisualNotice(
   warningCount: number,
-): string {
-  if (mode === 'ranked') {
-    if (warningCount === 1) {
-      return 'Atenção. Você saiu da Arena durante uma partida ranqueada. Esta é sua primeira advertência.'
-    }
-
-    if (warningCount === 2) {
-      return 'Advertência de integridade. Uma nova saída da Arena foi detectada.'
-    }
-
-    return 'Integridade violada. A partida foi encerrada.'
-  }
-
+): IntegrityVisualNoticeContent {
   if (warningCount === 1) {
-    return 'Atenção. Você saiu da Arena durante uma batalha. Esta saída foi registrada.'
+    return {
+      title: 'INTEGRIDADE DA BATALHA',
+      message: 'Você saiu da Arena. 1 aviso registrado.',
+    }
   }
 
   if (warningCount === 2) {
-    return 'Alerta de integridade. Você saiu novamente da Arena. Evite novas infrações.'
+    return {
+      title: 'ALERTA DE INTEGRIDADE',
+      message: 'Uma nova saída da Arena foi detectada. 2 avisos registrados.',
+    }
   }
 
-  return 'Integridade da batalha comprometida. Esta partida foi marcada como suspeita.'
-}
-
-export function getIntegrityVisualMessage(warningCount: number): string {
-  if (warningCount === 1) return '1 aviso registrado'
-  if (warningCount === 2) return '2 avisos registrados'
-
-  return 'Partida marcada como suspeita'
+  return {
+    title: 'INTEGRIDADE COMPROMETIDA',
+    message: 'Esta batalha foi marcada como suspeita.',
+  }
 }

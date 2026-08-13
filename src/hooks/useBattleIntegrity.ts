@@ -2,8 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useBlocker } from 'react-router-dom'
 import {
   battleModeRules,
-  getIntegritySpeechMessage,
-  getIntegrityVisualMessage,
+  getIntegrityVisualNotice,
   shouldTrackBattleIntegrity,
   type BattleMode,
 } from '@/config/battleModeRules'
@@ -13,8 +12,16 @@ export type IntegrityNoticeTone = 'neutral' | 'warning' | 'danger'
 
 export interface BattleIntegrityNotice {
   id: number
+  title: string
   message: string
   tone: IntegrityNoticeTone
+}
+
+interface PendingIntegrityNotice {
+  title: string
+  message: string
+  tone: IntegrityNoticeTone
+  dedupeKey: string
 }
 
 interface UseBattleIntegrityOptions {
@@ -70,28 +77,6 @@ export function reduceBattleIntegritySnapshot(
   }
 }
 
-export function speakIntegrityWarning(message: string): boolean {
-  if (
-    typeof window === 'undefined' ||
-    document.visibilityState === 'hidden' ||
-    !('speechSynthesis' in window) ||
-    typeof SpeechSynthesisUtterance === 'undefined'
-  ) {
-    return false
-  }
-
-  try {
-    const utterance = new SpeechSynthesisUtterance(message)
-    utterance.lang = 'pt-BR'
-    utterance.rate = 1
-    utterance.pitch = 0.92
-    window.speechSynthesis.speak(utterance)
-    return true
-  } catch {
-    return false
-  }
-}
-
 export function useBattleIntegrity({
   active,
   difficulty,
@@ -101,7 +86,7 @@ export function useBattleIntegrity({
   const [notice, setNotice] = useState<BattleIntegrityNotice | null>(null)
   const warningCountRef = useRef(0)
   const awaySessionRef = useRef(false)
-  const pendingSpeechRef = useRef<string | null>(null)
+  const pendingReturnNoticeRef = useRef<PendingIntegrityNotice | null>(null)
   const allowPageExitRef = useRef(false)
   const blurTimerRef = useRef<number | null>(null)
   const noticeTimerRef = useRef<number | null>(null)
@@ -119,6 +104,7 @@ export function useBattleIntegrity({
   }, [])
 
   const showIntegrityWarning = useCallback((
+    title: string,
     message: string,
     tone: IntegrityNoticeTone = 'warning',
     dedupeKey = message,
@@ -134,7 +120,7 @@ export function useBattleIntegrity({
 
     lastNoticeRef.current = { key: dedupeKey, timestamp: now }
     noticeSequenceRef.current += 1
-    setNotice({ id: noticeSequenceRef.current, message, tone })
+    setNotice({ id: noticeSequenceRef.current, title, message, tone })
 
     if (noticeTimerRef.current !== null) {
       window.clearTimeout(noticeTimerRef.current)
@@ -165,14 +151,14 @@ export function useBattleIntegrity({
     const nextWarningCount = nextSnapshot.warningCount
     warningCountRef.current = nextWarningCount
     setWarningCount(nextWarningCount)
-    pendingSpeechRef.current = getIntegritySpeechMessage(mode, nextWarningCount)
-    showIntegrityWarning(
-      getIntegrityVisualMessage(nextWarningCount),
-      nextWarningCount >= 3 ? 'danger' : 'warning',
-      `arena-exit-${nextWarningCount}`,
-    )
+    const visualNotice = getIntegrityVisualNotice(nextWarningCount)
+    pendingReturnNoticeRef.current = {
+      ...visualNotice,
+      tone: nextWarningCount >= 3 ? 'danger' : 'warning',
+      dedupeKey: `arena-exit-${nextWarningCount}`,
+    }
     return true
-  }, [active, mode, showIntegrityWarning, trackingEnabled])
+  }, [active, trackingEnabled])
 
   const handleArenaReturn = useCallback(() => {
     if (!awaySessionRef.current || document.visibilityState === 'hidden') return false
@@ -186,20 +172,26 @@ export function useBattleIntegrity({
       { active: true, trackingEnabled: true },
     )
     awaySessionRef.current = nextSnapshot.awaySessionOpen
-    const pendingSpeech = pendingSpeechRef.current
-    pendingSpeechRef.current = null
+    const pendingNotice = pendingReturnNoticeRef.current
+    pendingReturnNoticeRef.current = null
 
-    if (pendingSpeech) {
-      speakIntegrityWarning(pendingSpeech)
+    if (pendingNotice) {
+      showIntegrityWarning(
+        pendingNotice.title,
+        pendingNotice.message,
+        pendingNotice.tone,
+        pendingNotice.dedupeKey,
+      )
     }
 
     return true
-  }, [])
+  }, [showIntegrityWarning])
 
   const reportPasteAttempt = useCallback(() => {
     if (!active) return
 
     showIntegrityWarning(
+      'INTEGRIDADE DA ARENA',
       'Integridade da Arena: colar código não é permitido durante a Batalha.',
       'warning',
       'paste-blocked',
@@ -210,6 +202,7 @@ export function useBattleIntegrity({
     if (!active) return
 
     showIntegrityWarning(
+      'PROTEÇÃO DO DESAFIO',
       'O enunciado da batalha está protegido. Seu próprio código continua disponível para cópia.',
       'neutral',
       'challenge-copy-blocked',
@@ -234,7 +227,7 @@ export function useBattleIntegrity({
     )
     warningCountRef.current = resetSnapshot.warningCount
     awaySessionRef.current = resetSnapshot.awaySessionOpen
-    pendingSpeechRef.current = null
+    pendingReturnNoticeRef.current = null
     allowPageExitRef.current = false
     lastNoticeRef.current = { key: '', timestamp: 0 }
     setWarningCount(0)
@@ -243,21 +236,13 @@ export function useBattleIntegrity({
     if (navigationBlocker.state === 'blocked') {
       navigationBlocker.reset()
     }
-
-    if ('speechSynthesis' in window) {
-      try {
-        window.speechSynthesis.cancel()
-      } catch {
-        // A batalha continua mesmo quando o navegador recusa controle de áudio.
-      }
-    }
   }, [clearBlurTimer, navigationBlocker, trackingEnabled])
 
   useEffect(() => {
     if (!active) {
       clearBlurTimer()
       awaySessionRef.current = false
-      pendingSpeechRef.current = null
+      pendingReturnNoticeRef.current = null
       return
     }
 
