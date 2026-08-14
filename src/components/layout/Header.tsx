@@ -3,6 +3,11 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui'
 import { useAuth, useTheme } from '@/hooks'
 import { getIncomingRequestCount, subscribeToSocialChanges } from '@/lib/social-service'
+import { subscribeRoomInvites } from '@/lib/room-realtime-service'
+import {
+  getPendingRoomInviteCount,
+  subscribeToRoomChanges,
+} from '@/lib/room-service'
 import { ROUTES } from '@/routes/paths'
 import { cn } from '@/utils'
 import { DevsOnlineIndicator } from './DevsOnlineIndicator'
@@ -26,6 +31,7 @@ export function Header({ onOpenOnboarding }: { onOpenOnboarding: () => void }) {
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [logoutError, setLogoutError] = useState('')
   const [incomingRequestCount, setIncomingRequestCount] = useState(0)
+  const [roomInviteCount, setRoomInviteCount] = useState(0)
   const userMenuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -56,6 +62,34 @@ export function Header({ onOpenOnboarding }: { onOpenOnboarding: () => void }) {
   }, [isAuthenticated, user])
 
   const visibleIncomingRequestCount = isAuthenticated ? incomingRequestCount : 0
+  const visibleRoomInviteCount = isAuthenticated ? roomInviteCount : 0
+
+  useEffect(() => {
+    if (!isAuthenticated || !user) return
+
+    let active = true
+    const refreshRoomInviteCount = () => {
+      void getPendingRoomInviteCount()
+        .then((count) => {
+          if (active) setRoomInviteCount(count)
+        })
+        .catch(() => {
+          if (active) setRoomInviteCount(0)
+        })
+    }
+
+    refreshRoomInviteCount()
+    const unsubscribeLocal = subscribeToRoomChanges(refreshRoomInviteCount)
+    const unsubscribeRealtime = subscribeRoomInvites(user.id, refreshRoomInviteCount)
+    window.addEventListener('focus', refreshRoomInviteCount)
+
+    return () => {
+      active = false
+      unsubscribeLocal()
+      unsubscribeRealtime()
+      window.removeEventListener('focus', refreshRoomInviteCount)
+    }
+  }, [isAuthenticated, user])
 
   useEffect(() => {
     if (!userMenuOpen && !mobileOpen) return
@@ -219,6 +253,22 @@ export function Header({ onOpenOnboarding }: { onOpenOnboarding: () => void }) {
                         aria-label={`${visibleIncomingRequestCount} solicitações pendentes`}
                       >
                         {Math.min(visibleIncomingRequestCount, 99)}
+                      </span>
+                    )}
+                  </Link>
+                  <Link
+                    to={ROUTES.MULTIPLAYER}
+                    role="menuitem"
+                    onClick={closeUserMenu}
+                    className="flex items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-primary-muted hover:text-primary focus-ring"
+                  >
+                    <span>Multiplayer</span>
+                    {visibleRoomInviteCount > 0 && (
+                      <span
+                        className="inline-flex min-w-5 items-center justify-center rounded-full bg-danger px-1.5 py-0.5 text-[11px] font-black text-[var(--color-on-brand)]"
+                        aria-label={`${visibleRoomInviteCount} convites de batalha pendentes`}
+                      >
+                        {Math.min(visibleRoomInviteCount, 99)}
                       </span>
                     )}
                   </Link>

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   BattleCountdown,
   BattleEditor,
@@ -24,6 +25,7 @@ import {
 } from '@/components/ui'
 import { mockBattleChallenges } from '@/data/mockBattleChallenges'
 import { useAuth, useBattleIntegrity } from '@/hooks'
+import { ROUTES } from '@/routes/paths'
 import type { BattleDifficulty, BattleLanguage } from '@/types'
 import { addXP, validateBattleSolution } from '@/utils'
 
@@ -145,6 +147,7 @@ function getRivalStatus(progress: number): string {
 }
 
 export function BatalhaDevsPage() {
+  const navigate = useNavigate()
   const { user } = useAuth()
   const [language, setLanguage] = useState<BattleLanguage>(initialLanguage)
   const [difficulty, setDifficulty] = useState<BattleDifficulty>(initialDifficulty)
@@ -440,6 +443,33 @@ export function BatalhaDevsPage() {
   return (
     <div className="page-container arena-page-container battle-page">
       <AuthBanner />
+      <section className="battle-mode-switcher" aria-labelledby="battle-mode-title">
+        <div className="battle-mode-switcher__heading">
+          <span>Escolha seu confronto</span>
+          <h2 id="battle-mode-title">Modo de batalha</h2>
+        </div>
+        <div className="battle-mode-switcher__options">
+          <div className="battle-mode-option battle-mode-option--active">
+            <Badge variant="online">Ativo</Badge>
+            <strong>Casual</strong>
+            <p>Duelo simulado com o fluxo atual.</p>
+          </div>
+          <button
+            type="button"
+            className="battle-mode-option battle-mode-option--clickable focus-ring"
+            onClick={() => navigate(ROUTES.MULTIPLAYER)}
+          >
+            <Badge variant="gold">Online</Badge>
+            <strong>Multiplayer</strong>
+            <p>Crie ou entre em um lobby real 1v1.</p>
+          </button>
+          <div className="battle-mode-option battle-mode-option--disabled" aria-disabled="true">
+            <Badge variant="default">Futuro</Badge>
+            <strong>Ranked</strong>
+            <p>Competitivo permanece indisponível.</p>
+          </div>
+        </div>
+      </section>
       <BattleExitDialog
         open={Boolean(pendingNavigation)}
         onContinue={cancelNavigation}

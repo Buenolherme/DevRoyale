@@ -27,6 +27,31 @@ export type {
   SocialRelationshipState,
   SocialSearchResult,
 } from './social'
+export type {
+  DatabasePublicRoom,
+  DatabaseRoom,
+  DatabaseRoomInvite,
+  DatabaseRoomMember,
+  MatchFormat,
+  PublicRoom,
+  Room,
+  RoomDifficulty,
+  RoomInvite,
+  RoomInviteRealtimeEvent,
+  RoomInviteStatus,
+  RoomLanguage,
+  RoomMember,
+  RoomMemberRole,
+  RoomRealtimeEvent,
+  RoomSettings,
+  RoomStatus,
+  RoomVisibility,
+} from './room'
+export {
+  MATCH_FORMAT_LABELS,
+  ROOM_DIFFICULTY_LABELS,
+  ROOM_LANGUAGE_LABELS,
+} from './room'
 export type { User, UserXP } from './user'
 export type { Achievement, AchievementRarity } from './achievement'
 export type { Challenge, ChallengeDifficulty, ChallengeStatus } from './challenge'

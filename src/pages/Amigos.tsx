@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { CrownIcon, PageHeader } from '@/components/layout'
 import {
   Badge,
@@ -10,7 +11,13 @@ import {
   CardTitle,
   Input,
 } from '@/components/ui'
-import { usePresence } from '@/hooks'
+import { useAuth, usePresence } from '@/hooks'
+import {
+  RoomServiceError,
+  createRoom,
+  getCurrentRoom,
+  sendRoomInvite,
+} from '@/lib/room-service'
 import {
   SocialServiceError,
   acceptFriendRequest,
@@ -30,6 +37,8 @@ import type {
   SocialProfile,
   SocialSearchResult,
 } from '@/types/social'
+import type { Room } from '@/types'
+import { roomPath } from '@/routes/paths'
 
 type SearchStatus = 'idle' | 'loading' | 'success' | 'error'
 
@@ -89,6 +98,8 @@ function socialErrorMessage(error: unknown): string {
 }
 
 export function AmigosPage() {
+  const navigate = useNavigate()
+  const { user } = useAuth()
   const { isUserOnline } = usePresence()
   const [friends, setFriends] = useState<Friend[]>([])
   const [incomingRequests, setIncomingRequests] = useState<FriendRequest[]>([])
@@ -101,6 +112,7 @@ export function AmigosPage() {
   const [searchStatus, setSearchStatus] = useState<SearchStatus>('idle')
   const [searchError, setSearchError] = useState('')
   const [busyUserId, setBusyUserId] = useState<string | null>(null)
+  const [currentRoom, setCurrentRoom] = useState<Room | null>(null)
   const searchRequestId = useRef(0)
 
   const loadOverview = useCallback(async (showLoading = true) => {
@@ -108,12 +120,14 @@ export function AmigosPage() {
     setOverviewError('')
 
     try {
-      const [nextFriends, nextIncomingRequests] = await Promise.all([
+      const [nextFriends, nextIncomingRequests, nextCurrentRoom] = await Promise.all([
         getFriends(),
         getIncomingRequests(),
+        getCurrentRoom().catch(() => null),
       ])
       setFriends(nextFriends)
       setIncomingRequests(nextIncomingRequests)
+      setCurrentRoom(nextCurrentRoom)
     } catch (error) {
       setOverviewError(socialErrorMessage(error))
     } finally {
@@ -224,6 +238,44 @@ export function AmigosPage() {
     [friends, isUserOnline],
   )
   const onlineFriends = sortedFriends.filter((friend) => isUserOnline(friend.profile.id))
+
+  const handleBattleInvite = async (friend: Friend) => {
+    if (busyUserId) return
+    setBusyUserId(friend.profile.id)
+    setOverviewError('')
+    setFeedback('')
+
+    try {
+      let hostRoom = currentRoom
+      if (!hostRoom) {
+        hostRoom = await createRoom({
+          visibility: 'private',
+          language: 'python',
+          difficulty: 'basic',
+          matchFormat: 'bo1',
+          allowSpectators: false,
+        })
+        setCurrentRoom(hostRoom)
+      }
+
+      if (hostRoom.hostId !== user?.id) {
+        throw new RoomServiceError('Somente o host pode enviar convites desta sala.', 'HOST_ONLY')
+      }
+
+      await sendRoomInvite(hostRoom.id, friend.profile.id)
+      navigate(roomPath(hostRoom.code), {
+        state: { notice: `Convite enviado para @${friend.profile.username}.` },
+      })
+    } catch (battleError) {
+      setOverviewError(
+        battleError instanceof RoomServiceError
+          ? battleError.message
+          : 'Não foi possível preparar o convite de batalha.',
+      )
+    } finally {
+      setBusyUserId(null)
+    }
+  }
 
   const renderSearchActions = (result: SocialSearchResult) => {
     const disabled = busyUserId === result.id
@@ -575,6 +627,18 @@ export function AmigosPage() {
                         showPresence
                       />
                       <div className="flex flex-wrap justify-end gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          disabled={disabled || Boolean(currentRoom && currentRoom.hostId !== user?.id)}
+                          onClick={() => void handleBattleInvite(friend)}
+                        >
+                          {currentRoom && currentRoom.hostId !== user?.id
+                            ? 'Sala atual tem outro host'
+                            : currentRoom
+                              ? 'Convidar para batalha'
+                              : 'Criar sala e convidar'}
+                        </Button>
                         <Button
                           type="button"
                           variant="secondary"

@@ -15,6 +15,15 @@ export const DashboardPage = lazy(() =>
 export const BatalhaDevsPage = lazy(() =>
   import('@/pages/BatalhaDevs').then((module) => ({ default: module.BatalhaDevsPage })),
 )
+export const MultiplayerPage = lazy(() =>
+  import('@/pages/Multiplayer').then((module) => ({ default: module.MultiplayerPage })),
+)
+export const LobbyPage = lazy(() =>
+  import('@/pages/Lobby').then((module) => ({ default: module.LobbyPage })),
+)
+export const MultiplayerArenaPage = lazy(() =>
+  import('@/pages/MultiplayerArena').then((module) => ({ default: module.MultiplayerArenaPage })),
+)
 export const AreaEstudosPage = lazy(() =>
   import('@/pages/AreaEstudos').then((module) => ({ default: module.AreaEstudosPage })),
 )

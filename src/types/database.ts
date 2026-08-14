@@ -4,6 +4,19 @@ import type {
   DatabaseFriendship,
   FriendshipStatus,
 } from './social'
+import type {
+  DatabasePublicRoom,
+  DatabaseRoom,
+  DatabaseRoomInvite,
+  DatabaseRoomMember,
+  MatchFormat,
+  RoomDifficulty,
+  RoomInviteStatus,
+  RoomLanguage,
+  RoomMemberRole,
+  RoomStatus,
+  RoomVisibility,
+} from './room'
 
 type ProfileInsert = Omit<DatabaseProfile, 'created_at' | 'updated_at'> & {
   created_at?: string
@@ -27,6 +40,31 @@ type FriendshipUpdate = Partial<Omit<DatabaseFriendship, 'id' | 'created_at'>>
 type FriendBlockInsert = Omit<DatabaseFriendBlock, 'created_at'> & {
   created_at?: string
 }
+
+type RoomInsert = Omit<DatabaseRoom, 'id' | 'created_at' | 'updated_at' | 'closed_at'> & {
+  id?: string
+  created_at?: string
+  updated_at?: string
+  closed_at?: string | null
+}
+
+type RoomUpdate = Partial<Omit<DatabaseRoom, 'id' | 'created_at'>>
+
+type RoomMemberInsert = Omit<DatabaseRoomMember, 'joined_at' | 'updated_at'> & {
+  joined_at?: string
+  updated_at?: string
+}
+
+type RoomMemberUpdate = Partial<Pick<DatabaseRoomMember, 'role' | 'ready' | 'updated_at'>>
+
+type RoomInviteInsert = Omit<DatabaseRoomInvite, 'id' | 'status' | 'created_at' | 'expires_at'> & {
+  id?: string
+  status?: RoomInviteStatus
+  created_at?: string
+  expires_at?: string
+}
+
+type RoomInviteUpdate = Partial<Pick<DatabaseRoomInvite, 'status' | 'expires_at'>>
 
 export type Database = {
   public: {
@@ -79,6 +117,24 @@ export type Database = {
           },
         ]
       }
+      rooms: {
+        Row: DatabaseRoom
+        Insert: RoomInsert
+        Update: RoomUpdate
+        Relationships: []
+      }
+      room_members: {
+        Row: DatabaseRoomMember
+        Insert: RoomMemberInsert
+        Update: RoomMemberUpdate
+        Relationships: []
+      }
+      room_invites: {
+        Row: DatabaseRoomInvite
+        Insert: RoomInviteInsert
+        Update: RoomInviteUpdate
+        Relationships: []
+      }
     }
     Views: Record<never, never>
     Functions: {
@@ -86,9 +142,81 @@ export type Database = {
         Args: { p_addressee_id: string }
         Returns: DatabaseFriendship
       }
+      create_multiplayer_room: {
+        Args: {
+          p_visibility?: RoomVisibility
+          p_language?: RoomLanguage
+          p_difficulty?: RoomDifficulty
+          p_match_format?: MatchFormat
+          p_allow_spectators?: boolean
+        }
+        Returns: DatabaseRoom
+      }
+      join_room_by_code: {
+        Args: { p_code: string }
+        Returns: DatabaseRoom
+      }
+      get_current_room: {
+        Args: Record<never, never>
+        Returns: DatabaseRoom | null
+      }
+      update_room_settings: {
+        Args: {
+          p_room_id: string
+          p_visibility: RoomVisibility
+          p_language: RoomLanguage
+          p_difficulty: RoomDifficulty
+          p_match_format: MatchFormat
+          p_allow_spectators: boolean
+        }
+        Returns: DatabaseRoom
+      }
+      set_room_ready: {
+        Args: { p_room_id: string; p_ready: boolean }
+        Returns: DatabaseRoom
+      }
+      start_room_countdown: {
+        Args: { p_room_id: string }
+        Returns: DatabaseRoom
+      }
+      leave_room: {
+        Args: { p_room_id: string }
+        Returns: undefined
+      }
+      kick_room_member: {
+        Args: { p_room_id: string; p_user_id: string }
+        Returns: undefined
+      }
+      cancel_room: {
+        Args: { p_room_id: string }
+        Returns: undefined
+      }
+      send_room_invite: {
+        Args: { p_room_id: string; p_recipient_id: string }
+        Returns: DatabaseRoomInvite
+      }
+      accept_room_invite: {
+        Args: { p_invite_id: string }
+        Returns: DatabaseRoom
+      }
+      decline_room_invite: {
+        Args: { p_invite_id: string }
+        Returns: DatabaseRoomInvite
+      }
+      list_public_rooms: {
+        Args: { p_limit?: number }
+        Returns: DatabasePublicRoom[]
+      }
     }
     Enums: {
       friendship_status: FriendshipStatus
+      room_visibility: RoomVisibility
+      room_status: RoomStatus
+      room_language: RoomLanguage
+      room_difficulty: RoomDifficulty
+      match_format: MatchFormat
+      room_member_role: RoomMemberRole
+      room_invite_status: RoomInviteStatus
     }
     CompositeTypes: Record<never, never>
   }

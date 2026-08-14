@@ -13,6 +13,9 @@ import {
   HomePage,
   InterviewModePage,
   LoginPage,
+  LobbyPage,
+  MultiplayerArenaPage,
+  MultiplayerPage,
   NotFoundPage,
   PerfilPage,
   SobrePage,
@@ -49,6 +52,30 @@ export const router = createBrowserRouter([
         ),
       },
       { path: ROUTES.BATALHA_DEVS, element: <BatalhaDevsPage /> },
+      {
+        path: ROUTES.MULTIPLAYER,
+        element: (
+          <ProtectedRoute>
+            <MultiplayerPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: ROUTES.ROOM,
+        element: (
+          <ProtectedRoute>
+            <LobbyPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: ROUTES.BATTLE_MATCH,
+        element: (
+          <ProtectedRoute>
+            <MultiplayerArenaPage />
+          </ProtectedRoute>
+        ),
+      },
       { path: '/batalha', element: <Navigate to={ROUTES.BATALHA_DEVS} replace /> },
       { path: ROUTES.AREA_ESTUDOS, element: <AreaEstudosPage /> },
       { path: '/estudos', element: <Navigate to={ROUTES.AREA_ESTUDOS} replace /> },
