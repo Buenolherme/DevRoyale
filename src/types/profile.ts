@@ -24,27 +24,3 @@ export interface UpdateProfileInput {
   avatarUrl?: string | null
   bio?: string | null
 }
-
-type ProfileInsert = Omit<DatabaseProfile, 'created_at' | 'updated_at'> & {
-  created_at?: string
-  updated_at?: string
-}
-
-type ProfileUpdate = Partial<Omit<DatabaseProfile, 'id' | 'created_at'>>
-
-export type Database = {
-  public: {
-    Tables: {
-      profiles: {
-        Row: DatabaseProfile
-        Insert: ProfileInsert
-        Update: ProfileUpdate
-        Relationships: []
-      }
-    }
-    Views: Record<never, never>
-    Functions: Record<never, never>
-    Enums: Record<never, never>
-    CompositeTypes: Record<never, never>
-  }
-}

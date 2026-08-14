@@ -27,6 +27,9 @@ export const InterviewModePage = lazy(() =>
 export const PerfilPage = lazy(() =>
   import('@/pages/Perfil').then((module) => ({ default: module.PerfilPage })),
 )
+export const AmigosPage = lazy(() =>
+  import('@/pages/Amigos').then((module) => ({ default: module.AmigosPage })),
+)
 export const SobrePage = lazy(() =>
   import('@/pages/Sobre').then((module) => ({ default: module.SobrePage })),
 )

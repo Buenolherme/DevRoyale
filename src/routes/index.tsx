@@ -5,6 +5,7 @@ import { ProtectedRoute } from './ProtectedRoute'
 import { GuestOnlyRoute } from './GuestOnlyRoute'
 import {
   AreaEstudosPage,
+  AmigosPage,
   BatalhaDevsPage,
   BugArenaPage,
   CadastroPage,
@@ -55,6 +56,14 @@ export const router = createBrowserRouter([
       { path: ROUTES.INTERVIEW_MODE, element: <InterviewModePage /> },
       { path: '/interview', element: <Navigate to={ROUTES.INTERVIEW_MODE} replace /> },
       { path: ROUTES.SOBRE, element: <SobrePage /> },
+      {
+        path: ROUTES.AMIGOS,
+        element: (
+          <ProtectedRoute>
+            <AmigosPage />
+          </ProtectedRoute>
+        ),
+      },
       {
         path: ROUTES.PERFIL,
         element: (

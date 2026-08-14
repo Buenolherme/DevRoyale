@@ -13,12 +13,20 @@ export {
   getKnowledgeLevelLabel,
   getMainLanguageLabel,
 } from './auth'
+export type { DatabaseProfile, Profile, UpdateProfileInput } from './profile'
+export type { Database } from './database'
 export type {
-  Database,
-  DatabaseProfile,
-  Profile,
-  UpdateProfileInput,
-} from './profile'
+  DatabaseFriendBlock,
+  DatabaseFriendship,
+  Friend,
+  FriendRequest,
+  FriendshipStatus,
+  OnlinePresence,
+  PresenceStatus,
+  SocialProfile,
+  SocialRelationshipState,
+  SocialSearchResult,
+} from './social'
 export type { User, UserXP } from './user'
 export type { Achievement, AchievementRarity } from './achievement'
 export type { Challenge, ChallengeDifficulty, ChallengeStatus } from './challenge'

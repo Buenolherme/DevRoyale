@@ -1,3 +1,4 @@
+import { usePresence } from '@/hooks'
 import { cn } from '@/utils'
 
 interface DevsOnlineIndicatorProps {
@@ -6,7 +7,9 @@ interface DevsOnlineIndicatorProps {
 }
 
 export function DevsOnlineIndicator({ className, compact = false }: DevsOnlineIndicatorProps) {
-  // Status estático até existir presença real via backend/realtime.
+  const { connected, onlineUsers } = usePresence()
+  const onlineLabel = `${onlineUsers.length} ${onlineUsers.length === 1 ? 'dev online' : 'devs online'}`
+
   return (
     <div
       className={cn(
@@ -15,14 +18,21 @@ export function DevsOnlineIndicator({ className, compact = false }: DevsOnlineIn
         className,
       )}
       role="status"
-      aria-label="Arena Online"
+      aria-label={connected ? onlineLabel : 'Presença indisponível'}
     >
       <span className="relative flex h-2 w-2 shrink-0" aria-hidden="true">
-        <span className="relative inline-flex h-2 w-2 rounded-full bg-online shadow-[0_0_10px_rgba(34,197,94,0.34)]" />
+        <span
+          className={cn(
+            'relative inline-flex h-2 w-2 rounded-full',
+            connected
+              ? 'bg-online shadow-[0_0_10px_rgba(34,197,94,0.34)]'
+              : 'bg-muted',
+          )}
+        />
       </span>
       <span className={cn('font-medium text-muted', compact ? 'text-[11px]' : 'text-xs')}>
-        <span className="text-foreground">Arena</span>
-        <span> Online</span>
+        <span className="text-foreground">{connected ? onlineUsers.length : 'Arena'}</span>
+        <span>{connected ? ` ${onlineUsers.length === 1 ? 'dev online' : 'devs online'}` : ''}</span>
       </span>
     </div>
   )

@@ -1,6 +1,7 @@
 export { HomePage } from './Home'
 export { LoginPage } from './Login'
 export { CadastroPage } from './Cadastro'
+export { AmigosPage } from './Amigos'
 export { DashboardPage } from './Dashboard'
 export { BatalhaDevsPage } from './BatalhaDevs'
 export { AreaEstudosPage } from './AreaEstudos'

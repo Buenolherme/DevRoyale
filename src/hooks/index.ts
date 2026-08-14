@@ -1,4 +1,5 @@
 export { useAuth } from './useAuth'
 export { useBattleIntegrity } from './useBattleIntegrity'
 export { useDialogFocus } from './useDialogFocus'
+export { usePresence } from './usePresence'
 export { useTheme } from './useTheme'

@@ -8,6 +8,7 @@ export const ROUTES = {
   BUG_ARENA: '/bug-arena',
   INTERVIEW_MODE: '/interview-mode',
   PERFIL: '/perfil',
+  AMIGOS: '/amigos',
   SOBRE: '/sobre',
 } as const
 

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui'
 import { useAuth, useTheme } from '@/hooks'
+import { getIncomingRequestCount, subscribeToSocialChanges } from '@/lib/social-service'
 import { ROUTES } from '@/routes/paths'
 import { cn } from '@/utils'
 import { DevsOnlineIndicator } from './DevsOnlineIndicator'
@@ -24,7 +25,37 @@ export function Header({ onOpenOnboarding }: { onOpenOnboarding: () => void }) {
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [logoutError, setLogoutError] = useState('')
+  const [incomingRequestCount, setIncomingRequestCount] = useState(0)
   const userMenuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!isAuthenticated || !user) {
+      return
+    }
+
+    let active = true
+    const refreshIncomingCount = () => {
+      void getIncomingRequestCount()
+        .then((count) => {
+          if (active) setIncomingRequestCount(count)
+        })
+        .catch(() => {
+          if (active) setIncomingRequestCount(0)
+        })
+    }
+
+    refreshIncomingCount()
+    const unsubscribe = subscribeToSocialChanges(refreshIncomingCount)
+    window.addEventListener('focus', refreshIncomingCount)
+
+    return () => {
+      active = false
+      unsubscribe()
+      window.removeEventListener('focus', refreshIncomingCount)
+    }
+  }, [isAuthenticated, user])
+
+  const visibleIncomingRequestCount = isAuthenticated ? incomingRequestCount : 0
 
   useEffect(() => {
     if (!userMenuOpen && !mobileOpen) return
@@ -174,6 +205,22 @@ export function Header({ onOpenOnboarding }: { onOpenOnboarding: () => void }) {
                     className="block rounded-lg px-3 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-primary-muted hover:text-primary focus-ring"
                   >
                     Dashboard
+                  </Link>
+                  <Link
+                    to={ROUTES.AMIGOS}
+                    role="menuitem"
+                    onClick={closeUserMenu}
+                    className="flex items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-primary-muted hover:text-primary focus-ring"
+                  >
+                    <span>Amigos</span>
+                    {visibleIncomingRequestCount > 0 && (
+                      <span
+                        className="inline-flex min-w-5 items-center justify-center rounded-full bg-danger px-1.5 py-0.5 text-[11px] font-black text-[var(--color-on-brand)]"
+                        aria-label={`${visibleIncomingRequestCount} solicitações pendentes`}
+                      >
+                        {Math.min(visibleIncomingRequestCount, 99)}
+                      </span>
+                    )}
                   </Link>
                   <Link
                     to={ROUTES.PERFIL}

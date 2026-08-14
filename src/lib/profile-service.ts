@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase'
+import type { Database } from '@/types/database'
 import type {
-  Database,
   DatabaseProfile,
   Profile,
   UpdateProfileInput,
