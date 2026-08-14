@@ -1,5 +1,5 @@
 /**
- * Serviço de autenticação V1.0 — localStorage (mock).
+ * Serviço de autenticação local da V1.5 — localStorage (mock).
  *
  * Migração futura para Supabase:
  * - register() → supabase.auth.signUp() + insert em profiles

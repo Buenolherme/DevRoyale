@@ -22,7 +22,7 @@ export const PROGRESS_ACHIEVEMENTS: ProgressAchievementDefinition[] = [
   {
     id: 'arena-student',
     name: 'Estudante da Arena',
-    description: 'Conclua 3 aulas na Área dos Estudos.',
+    description: 'Conclua 3 aulas no Treinamento de Devs.',
     rarity: 'rare',
     condition: {
       metric: 'completed-lessons',

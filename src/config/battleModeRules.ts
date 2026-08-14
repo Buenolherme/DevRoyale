@@ -11,7 +11,6 @@ export interface BattleModeRules {
   editorLockWarning: number | null
   editorLockDurationMs: number
   autoDefeatThreshold: number | null
-  playAlertSound: boolean
 }
 
 export interface IntegrityVisualNoticeContent {
@@ -36,7 +35,6 @@ export const battleModeRules: Record<BattleMode, BattleModeRules> = {
     editorLockWarning: null,
     editorLockDurationMs: 0,
     autoDefeatThreshold: null,
-    playAlertSound: false,
   },
   ranked: {
     allowHints: false,
@@ -47,7 +45,6 @@ export const battleModeRules: Record<BattleMode, BattleModeRules> = {
     editorLockWarning: 2,
     editorLockDurationMs: 4_000,
     autoDefeatThreshold: 3,
-    playAlertSound: true,
   },
 }
 

@@ -1,5 +1,6 @@
-export const DEVROYALE_VERSION = 'V1.5'
-export const DEVROYALE_STATUS = 'Em validação'
+export const DEVROYALE_VERSION = '1.5.0'
+export const DEVROYALE_VERSION_LABEL = `V${DEVROYALE_VERSION.split('.').slice(0, 2).join('.')}`
+export const DEVROYALE_STATUS = 'Release'
 export const ONBOARDING_STORAGE_KEY = 'devroyale_onboarding_seen_v1_5'
 
 export function hasSeenDevRoyaleOnboarding(): boolean {

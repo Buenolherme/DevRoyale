@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
-import { DEVROYALE_VERSION } from '@/config/appMeta'
+import { DEVROYALE_VERSION_LABEL } from '@/config/appMeta'
 import { useDialogFocus } from '@/hooks'
 import {
   battleProblemCategories,
@@ -80,7 +80,7 @@ export function BattleProblemReport({ open, onClose, context, code }: BattleProb
       >
         <header className="battle-report-dialog__header">
           <div>
-            <span>Feedback da Arena · {DEVROYALE_VERSION}</span>
+            <span>Feedback da Arena · {DEVROYALE_VERSION_LABEL}</span>
             <h2 id="battle-report-title">Reportar problema</h2>
             <p id="battle-report-description">
               Gere um relatório para compartilhar com a equipe durante os testes da Arena.

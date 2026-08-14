@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { DEVROYALE_VERSION, markDevRoyaleOnboardingSeen } from '@/config/appMeta'
+import { DEVROYALE_VERSION_LABEL, markDevRoyaleOnboardingSeen } from '@/config/appMeta'
 import { useDialogFocus } from '@/hooks'
 import { ROUTES } from '@/routes/paths'
 import { getButtonClassName, ModeIcon, type ModeIconName } from '@/components/ui'
@@ -91,7 +91,7 @@ export function FirstVisitOnboarding({ open, onClose }: FirstVisitOnboardingProp
         tabIndex={-1}
       >
         <div className="onboarding-dialog__topline">
-          <span>DevRoyale {DEVROYALE_VERSION}</span>
+          <span>DevRoyale {DEVROYALE_VERSION_LABEL}</span>
           <button type="button" onClick={dismiss} className="onboarding-dialog__skip">
             Pular introdução
           </button>

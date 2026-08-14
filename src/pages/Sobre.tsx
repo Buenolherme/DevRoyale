@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { DEVROYALE_STATUS, DEVROYALE_VERSION } from '@/config/appMeta'
+import { DEVROYALE_STATUS, DEVROYALE_VERSION_LABEL } from '@/config/appMeta'
 import { PageHeader } from '@/components/layout'
 import {
   Badge,
@@ -40,7 +40,7 @@ export function SobrePage() {
             className="about-hero__header"
           >
             <Badge variant="gold" className="normal-case tracking-normal">
-              {DEVROYALE_VERSION} · {DEVROYALE_STATUS}
+              {DEVROYALE_VERSION_LABEL} · {DEVROYALE_STATUS}
             </Badge>
           </PageHeader>
           <div className="about-hero__actions">
@@ -108,8 +108,8 @@ export function SobrePage() {
               <span>Proteções locais para testes competitivos</span>
             </div>
             <p>
-              A versão atual utiliza batalhas simuladas enquanto o multiplayer
-              competitivo está em desenvolvimento.
+              A versão atual utiliza batalhas casuais com rival simulado. Multiplayer e
+              Ranked estão planejados para versões futuras e ainda não estão disponíveis.
             </p>
           </div>
         </section>
@@ -199,12 +199,12 @@ export function SobrePage() {
         <section className="about-status" aria-labelledby="about-status-title">
           <div>
             <span>Versão atual</span>
-            <h2 id="about-status-title">DevRoyale {DEVROYALE_VERSION}</h2>
+            <h2 id="about-status-title">DevRoyale {DEVROYALE_VERSION_LABEL}</h2>
             <strong>{DEVROYALE_STATUS}</strong>
           </div>
           <p>
-            A V1.5 está em fase de testes e refinamento antes da próxima evolução
-            competitiva da plataforma.
+            A V1.5 é a versão atual da Arena, com Batalha casual simulada, Bug Arena,
+            Treinamento de Devs e progressão local disponíveis.
           </p>
           <div className="about-status__creator">
             <span>Criado por</span>

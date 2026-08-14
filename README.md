@@ -1,143 +1,105 @@
 # DevRoyale
 
-DevRoyale é uma plataforma gamificada para estudantes e iniciantes aprenderem programação com trilhas guiadas, batalhas de código, correção de bugs e treino de entrevista técnica.
+Arena gamificada de programação focada em Batalhas de Devs.
 
-O projeto combina uma identidade visual dark/gamer com progressão por XP, níveis e conquistas, criando uma experiência de aprendizado mais envolvente sem transformar estudo em obrigação.
+**Versão atual:** V1.5 (`1.5.0`)
 
-## Preview visual
+**Status:** Release
 
-A V1.0 do DevRoyale foi desenhada como uma arena premium para devs em evolução:
+O DevRoyale transforma prática de programação em uma arena competitiva. A Batalha de Devs é o modo principal; Bug Arena e Treinamento de Devs funcionam como preparação para desafios mais exigentes.
 
-- Home com Scout Guerreiro, efeitos sutis, CTA para Batalha e Estudos.
-- Área dos Estudos guiada pelo Scout Professor.
-- Bug Arena com Scout Mecânico e foco em depuração de código quebrado.
-- Batalha de Devs com preparação, contagem 3, 2, 1 e overlay de vitória/derrota.
-- Dashboard e Perfil com progresso real salvo localmente.
+## Principais funcionalidades
 
-## Funcionalidades
+- Batalha de Devs com rival simulado;
+- validação flexível, capaz de aceitar diferentes soluções corretas;
+- feedback contextual de quase acerto nos níveis iniciais, sem aceitar respostas aproximadas;
+- editor profissional com auto-close, indentação, Tab/Shift+Tab e histórico local de edição;
+- dicas progressivas;
+- solução de referência disponível após o encerramento da batalha;
+- integridade da Arena com avisos visuais e proteção contra paste;
+- Bug Arena;
+- Treinamento de Devs;
+- sistema central de XP e níveis;
+- conquistas e histórico de atividade;
+- Dashboard;
+- Perfil com avatar, bio e preferências por usuário;
+- Interview Mode;
+- onboarding de primeira entrada;
+- Light Mode e Dark Mode.
 
-### Home
+## Catálogos da V1.5
 
-- Landing page premium com identidade dark/gamer.
-- Scout Guerreiro integrado ao hero.
-- CTAs para Batalha e Estudos.
-- Cards para os principais modos do DevRoyale.
-- Indicador honesto “Arena Online”, sem número fake de usuários.
+- 56 desafios de Batalha;
+- 96 bugs para correção;
+- 102 aulas distribuídas em 32 trilhas de treinamento;
+- Python, JavaScript, SQL e HTML/CSS na Arena.
 
-### Área dos Estudos
+## Batalha de Devs
 
-- 8 temas disponíveis.
-- 4 níveis por tema.
-- 32 trilhas.
-- 102 aulas originais.
-- Histórico de estudos.
-- XP ao concluir aulas.
-- Visitantes podem navegar e estudar sem salvar progresso permanente.
-- Usuários logados salvam histórico, XP e progresso localmente.
+A pessoa escolhe linguagem e dificuldade, entra no cockpit, resolve o objetivo no editor e executa a solução antes do rival simulado.
 
-Temas disponíveis:
+Dificuldades disponíveis:
 
-- Lógica de Programação
-- Python
-- JavaScript
-- HTML/CSS
-- SQL
-- Git/GitHub
-- Frontend
-- Backend
+- Nunca programei;
+- Básico;
+- Intermediário;
+- Avançado.
 
-Níveis:
+A validação considera o resultado e as restrições explícitas do desafio. Soluções equivalentes podem vencer sem serem idênticas à referência. Diferenças apenas aproximadas de saída continuam incorretas.
 
-- Nunca programei
-- Básico
-- Intermediário
-- Avançado
+Uma vitória válida concede XP apenas na primeira conclusão do desafio. Derrota e repetição não concedem XP adicional.
 
-### Bug Arena
+### Integridade da Arena
 
-- 96 desafios de correção de bugs.
-- Filtros por linguagem, dificuldade e tamanho do código.
-- Bugs novos priorizados.
-- Ação “Bug novo aleatório”.
-- Modo “Treino infinito”.
-- Bugs repetidos podem ser praticados, mas não concedem XP novamente.
-- Recomendações com base no histórico da Área dos Estudos.
-- Scout Mecânico como guia visual e contextual.
+Na batalha casual:
 
-### Batalha de Devs
+- Nunca programei não registra advertências de saída;
+- Básico, Intermediário e Avançado registram saídas da Arena;
+- a primeira e a segunda saída exibem avisos visuais;
+- a terceira saída marca a integridade como comprometida;
+- não há voz, som, bloqueio temporário, derrota automática ou perda de XP.
 
-- 56 desafios de código.
-- Usuário escreve uma solução do zero.
-- Dificuldades oficiais:
-  - Nunca programei
-  - Básico
-  - Intermediário
-  - Avançado
-- Tela de preparação antes da batalha.
-- Botão “Começar Batalha”.
-- Contagem 3, 2, 1.
-- Overlay de “Vitória!” e “Derrota” sobre o editor.
-- Vitória concede XP conforme a regra do desafio.
-- Derrota não concede XP e bloqueia o editor.
-- Repetir desafio já concluído não concede XP novamente.
+A arquitetura mantém regras configuráveis para uma futura Ranked, que ainda não está disponível. Nessa configuração futura, a segunda saída poderá bloquear o editor por quatro segundos e a terceira poderá encerrar a partida. A Ranked não usará voz ou áudio de integridade.
 
-### Dashboard
+## Bug Arena
 
-- Progresso real do usuário.
-- XP total.
-- Nível atual.
-- Progresso até o próximo nível.
-- Estatísticas de aulas, bugs e batalhas.
-- Atividade recente.
-- Resumo de conquistas.
+- filtros por linguagem, dificuldade e tamanho;
+- recomendação baseada no histórico de treinamento;
+- seleção de bug novo;
+- treino infinito;
+- prevenção de XP duplicado em bugs já concluídos.
 
-### Perfil
+## Treinamento de Devs
 
-- Avatar/foto de perfil.
-- Upload de imagem com otimização antes de salvar.
-- Bio.
-- Experiência editável.
-- Linguagem favorita.
-- Preferências persistidas por usuário.
-- Botão “Ver conquistas”.
-- Conquistas desbloqueadas e bloqueadas.
+- 8 temas;
+- 4 níveis por tema;
+- 32 trilhas;
+- 102 aulas;
+- exemplos comentados, erros comuns e miniatividades;
+- recursos externos confiáveis;
+- histórico e continuidade de aprendizado;
+- progresso persistido somente para usuários autenticados localmente.
 
-### Interview Mode
+## Progresso e perfil
 
-- Perguntas de treino técnico.
-- Experiência local na V1.0.
-- Sem IA real nesta versão.
+XP, níveis, conquistas, conclusões e atividades são centralizados e isolados por usuário. Dashboard e Perfil usam esses dados reais do armazenamento local.
 
-### Sistema de progresso
+A autenticação atual é local. Avatar, bio, experiência e linguagem favorita também são persistidos por usuário.
 
-- XP centralizado.
-- Níveis.
-- Conquistas.
-- Histórico de atividade.
-- Prevenção de XP duplicado.
-- Isolamento por usuário no `localStorage`.
-- Visitantes podem usar os modos, mas progresso permanente depende de login local.
+## Tecnologias
 
-## Tecnologias utilizadas
+- React;
+- TypeScript;
+- Vite;
+- React Router;
+- CSS;
+- Git/GitHub;
+- Vercel;
+- LocalStorage.
 
-- React
-- TypeScript
-- Vite
-- React Router
-- CSS modularizado
-- localStorage para:
-  - autenticação mock;
-  - sessão local;
-  - progresso;
-  - XP;
-  - conquistas;
-  - histórico de estudos;
-  - bugs concluídos;
-  - preferências do perfil.
+## Execução local
 
-## Como rodar localmente
-
-Clone o repositório e instale as dependências:
+Instale as dependências:
 
 ```bash
 npm install
@@ -147,12 +109,6 @@ Inicie o ambiente de desenvolvimento:
 
 ```bash
 npm run dev
-```
-
-Acesse a URL exibida no terminal, geralmente:
-
-```bash
-http://localhost:5173
 ```
 
 Gere a build de produção:
@@ -167,97 +123,53 @@ Visualize a build localmente:
 npm run preview
 ```
 
-## Scripts disponíveis
-
-```bash
-npm run dev
-```
-
-Inicia o servidor de desenvolvimento com Vite.
-
-```bash
-npm run build
-```
-
-Compila TypeScript e gera a build de produção.
+Execute o lint:
 
 ```bash
 npm run lint
 ```
 
-Executa a validação de lint do projeto.
+## Estrutura resumida
 
-```bash
-npm run preview
-```
-
-Serve localmente a build de produção.
-
-## Estrutura resumida do projeto
-
-```txt
+```text
 src/
-  assets/              # Imagens dos Scouts e assets visuais
-  components/          # Componentes reutilizáveis
-    battle/            # Componentes da Batalha de Devs
-    bug-arena/         # Componentes da Bug Arena
-    home/              # Componentes específicos da Home
-    layout/            # Header, footer, logo, Scouts e layout geral
-    profile/           # Componentes do Perfil
-    progress/          # Insígnias e conquistas
-    studies/           # Componentes da Área dos Estudos
-    ui/                # Componentes base de interface
-  contexts/            # Contextos de autenticação e tema
-  data/                # Catálogos locais de aulas, bugs e desafios
-  hooks/               # Hooks reutilizáveis
-  lib/                 # Serviços locais, como autenticação mock
-  pages/               # Páginas principais
-  routes/              # Rotas, lazy loading e proteção de rotas
-  styles/              # CSS modularizado por base, layout, componentes e páginas
-  types/               # Tipos TypeScript
-  utils/               # Progresso, validações, histórico e preferências
+  assets/       Imagens e identidade visual
+  components/   Componentes da Arena e elementos reutilizáveis
+  config/       Metadados e regras configuráveis
+  contexts/     Autenticação e tema
+  data/         Catálogos de batalhas, bugs e aulas
+  hooks/        Integridade, dialogs e hooks de aplicação
+  pages/        Páginas principais
+  routes/       Rotas e proteção de acesso
+  styles/       Base visual, temas e estilos por página
+  utils/        Validação, progresso e persistência local
 ```
 
-## Status da V1.0
+O `vercel.json` mantém o rewrite necessário para que rotas SPA sejam servidas pelo `index.html`.
 
-DevRoyale V1.0 está finalizado e pronto para deploy.
+## Limitações atuais
 
-QA final realizado:
+- multiplayer ainda não existe;
+- Ranked ainda não existe;
+- a batalha atual usa rival simulado;
+- autenticação e progresso usam armazenamento local;
+- não há sincronização entre dispositivos;
+- o backend competitivo fica para a V2.0;
+- Interview Mode é um treino local, sem IA integrada.
 
-- Rotas principais validadas.
-- Home validada em desktop e mobile.
-- Estudos validados com 102 aulas.
-- Bug Arena validada com 96 bugs.
-- Batalha validada com 56 desafios.
-- XP, níveis e conquistas validados.
-- Dashboard e Perfil usando progresso real.
-- `npm run lint` passando.
-- `npm run build` passando.
-- Preview de produção validado localmente.
+## Roadmap V2.0
 
-## Limitações da V1.0
+- multiplayer;
+- matchmaking;
+- Ranked;
+- ranks;
+- temporadas;
+- chat;
+- modo espectador;
+- VIP;
+- monetização.
 
-- A autenticação é mock/localStorage.
-- Não há backend real.
-- Não há sincronização entre dispositivos.
-- Presença online real fica para versão futura.
-- Interview Mode ainda é treino local, sem IA real.
-- Testes E2E automatizados ficam para uma etapa futura.
-
-## Roadmap futuro
-
-Possíveis evoluções pós-V1.0:
-
-- Backend real para autenticação e persistência.
-- Sincronização de progresso entre dispositivos.
-- Presença online real.
-- Ranking e temporadas.
-- Torneios e desafios semanais.
-- Interview Mode com IA.
-- Testes E2E automatizados.
-- Painel administrativo para gerenciar conteúdos.
-- Modo recruiter/empresas.
-- Integrações com faculdades e comunidades.
+O roadmap não possui datas públicas definidas.
 
 ## Créditos
 

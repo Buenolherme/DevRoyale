@@ -6,6 +6,7 @@ import {
 } from '@/components/home/HomeFeatureCard'
 import { HeroBackground, ScoutWarriorPlaceholder } from '@/components/layout'
 import { Badge, ModeIcon, getButtonClassName, type ModeIconName } from '@/components/ui'
+import { DEVROYALE_STATUS, DEVROYALE_VERSION_LABEL } from '@/config/appMeta'
 import { ROUTES } from '@/routes/paths'
 
 const featureCards: HomeFeatureCardData[] = [
@@ -91,7 +92,7 @@ export function HomePage() {
           <div className="text-center lg:text-left">
             <div className="animate-fade-up">
               <Badge variant="gold" className="mb-5 normal-case tracking-wide">
-                DevRoyale V1.5 · Em validação
+                DevRoyale {DEVROYALE_VERSION_LABEL} · {DEVROYALE_STATUS}
               </Badge>
             </div>
 

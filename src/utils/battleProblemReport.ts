@@ -55,7 +55,7 @@ export function buildBattleProblemReport({
     `Dificuldade: ${context.difficulty}`,
     `Categoria: ${category}`,
     `Descrição: ${description.trim() || 'Não informada'}`,
-    `Versão: ${DEVROYALE_VERSION}`,
+    `Versão: V${DEVROYALE_VERSION}`,
     `Navegador: ${browser}`,
   ]
 

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { DEVROYALE_STATUS, DEVROYALE_VERSION } from '@/config/appMeta'
+import { DEVROYALE_STATUS, DEVROYALE_VERSION_LABEL } from '@/config/appMeta'
 import { ROUTES } from '@/routes/paths'
 import { Logo } from './Logo'
 
@@ -24,8 +24,8 @@ export function Footer({ onOpenOnboarding }: { onOpenOnboarding: () => void }) {
             Como funciona
           </button>
         </nav>
-        <div className="version-indicator" aria-label={`DevRoyale ${DEVROYALE_VERSION}, ${DEVROYALE_STATUS}`}>
-          <strong>DevRoyale {DEVROYALE_VERSION}</strong>
+        <div className="version-indicator" aria-label={`DevRoyale ${DEVROYALE_VERSION_LABEL}, ${DEVROYALE_STATUS}`}>
+          <strong>DevRoyale {DEVROYALE_VERSION_LABEL}</strong>
           <span>{DEVROYALE_STATUS}</span>
         </div>
         <div className="h-px w-16 bg-gradient-to-r from-transparent via-secondary/40 to-transparent" />
