@@ -11,7 +11,9 @@ export function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const redirectFrom = (location.state as { from?: string } | null)?.from
+  const routeState = location.state as { from?: string; notice?: string } | null
+  const redirectFrom = routeState?.from
+  const notice = routeState?.notice
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -30,6 +32,7 @@ export function LoginPage() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
+    if (isSubmitting) return
     setFormError('')
     if (!validate()) return
 
@@ -61,6 +64,14 @@ export function LoginPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+              {notice && (
+                <div
+                  className="rounded-xl border border-success/25 bg-success-muted px-4 py-3 text-sm text-success"
+                  role="status"
+                >
+                  {notice}
+                </div>
+              )}
               {formError && (
                 <div
                   className="rounded-xl border border-danger/30 bg-danger-muted px-4 py-3 text-sm text-danger"

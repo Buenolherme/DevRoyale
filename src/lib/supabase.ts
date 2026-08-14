@@ -1,19 +1,17 @@
-/**
- * Placeholder para integração futura com Supabase.
- *
- * Migração de autenticação (ver também src/lib/auth-service.ts):
- * - AuthProvider → consumir supabase.auth.onAuthStateChange()
- * - register/login/logout → métodos Supabase Auth
- * - profiles table → knowledgeLevel, mainLanguage, xp, level
- */
+import { createClient } from '@supabase/supabase-js'
+import type { Database } from '@/types/profile'
 
-export const supabaseConfig = {
-  url: import.meta.env.VITE_SUPABASE_URL ?? '',
-  anonKey: import.meta.env.VITE_SUPABASE_ANON_KEY ?? '',
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabasePublishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
+
+if (!supabaseUrl || !supabasePublishableKey) {
+  throw new Error('Supabase não configurado para a V2.0.')
 }
 
-export function isSupabaseConfigured(): boolean {
-  return Boolean(supabaseConfig.url && supabaseConfig.anonKey)
-}
-
-// export const supabase = createClient(supabaseConfig.url, supabaseConfig.anonKey)
+export const supabase = createClient<Database>(supabaseUrl, supabasePublishableKey, {
+  auth: {
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    persistSession: true,
+  },
+})

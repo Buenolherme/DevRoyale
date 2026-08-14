@@ -4,13 +4,16 @@ import type { UserProfilePreferences } from '@/utils'
 interface ProfileAvatarProps {
   preferences: UserProfilePreferences
   name: string
+  avatarUrl?: string | null
 }
 
-export function ProfileAvatar({ preferences, name }: ProfileAvatarProps) {
+export function ProfileAvatar({ preferences, name, avatarUrl }: ProfileAvatarProps) {
+  const visibleAvatar = preferences.avatarDataUrl ?? avatarUrl
+
   return (
     <div className="profile-avatar" aria-label={`Avatar de ${name}`}>
-      {preferences.avatarDataUrl ? (
-        <img src={preferences.avatarDataUrl} alt={`Foto de perfil de ${name}`} />
+      {visibleAvatar ? (
+        <img src={visibleAvatar} alt={`Foto de perfil de ${name}`} />
       ) : (
         <CrownIcon size={54} className="profile-avatar__crown" />
       )}

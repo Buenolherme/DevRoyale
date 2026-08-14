@@ -21,7 +21,8 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to={ROUTES.LOGIN} state={{ from: location.pathname }} replace />
+    const requestedRoute = `${location.pathname}${location.search}${location.hash}`
+    return <Navigate to={ROUTES.LOGIN} state={{ from: requestedRoute }} replace />
   }
 
   return children

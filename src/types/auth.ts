@@ -1,3 +1,6 @@
+import type { Session } from '@supabase/supabase-js'
+import type { Profile } from './profile'
+
 export type KnowledgeLevel = 'never' | 'beginner' | 'basic' | 'intermediate' | 'advanced'
 
 export type MainLanguage =
@@ -13,6 +16,10 @@ export interface AuthUser {
   id: string
   name: string
   email: string
+  username: string
+  displayName: string
+  avatarUrl: string | null
+  bio: string | null
   knowledgeLevel: KnowledgeLevel
   mainLanguage: MainLanguage
   level: number
@@ -24,6 +31,7 @@ export interface AuthUser {
 
 export interface RegisterInput {
   name: string
+  username: string
   email: string
   password: string
   confirmPassword: string
@@ -31,9 +39,21 @@ export interface RegisterInput {
   mainLanguage: MainLanguage | ''
 }
 
+export interface RegisterResult {
+  requiresEmailConfirmation: boolean
+}
+
 export interface LoginInput {
   email: string
   password: string
+}
+
+export interface AuthState {
+  user: AuthUser | null
+  session: Session | null
+  profile: Profile | null
+  loading: boolean
+  authenticated: boolean
 }
 
 export const KNOWLEDGE_LEVEL_OPTIONS: { value: KnowledgeLevel; label: string }[] = [
@@ -55,9 +75,9 @@ export const MAIN_LANGUAGE_OPTIONS: { value: MainLanguage; label: string }[] = [
 ]
 
 export function getKnowledgeLevelLabel(level: KnowledgeLevel): string {
-  return KNOWLEDGE_LEVEL_OPTIONS.find((o) => o.value === level)?.label ?? level
+  return KNOWLEDGE_LEVEL_OPTIONS.find((option) => option.value === level)?.label ?? level
 }
 
 export function getMainLanguageLabel(language: MainLanguage): string {
-  return MAIN_LANGUAGE_OPTIONS.find((o) => o.value === language)?.label ?? language
+  return MAIN_LANGUAGE_OPTIONS.find((option) => option.value === language)?.label ?? language
 }

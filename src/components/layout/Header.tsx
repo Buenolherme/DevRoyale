@@ -22,6 +22,8 @@ export function Header({ onOpenOnboarding }: { onOpenOnboarding: () => void }) {
   const { user, isAuthenticated, logout } = useAuth()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const [logoutError, setLogoutError] = useState('')
   const userMenuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -53,13 +55,23 @@ export function Header({ onOpenOnboarding }: { onOpenOnboarding: () => void }) {
     setUserMenuOpen(false)
   }
 
-  const handleLogout = () => {
-    setUserMenuOpen(false)
-    setMobileOpen(false)
-    logout()
-    window.setTimeout(() => {
+  const handleLogout = async () => {
+    if (isLoggingOut) return
+
+    setLogoutError('')
+    setIsLoggingOut(true)
+
+    try {
+      await logout()
+      setUserMenuOpen(false)
+      setMobileOpen(false)
       navigate(ROUTES.HOME, { replace: true })
-    }, 0)
+    } catch {
+      setLogoutError('Não foi possível sair agora. Tente novamente.')
+      setUserMenuOpen(true)
+    } finally {
+      setIsLoggingOut(false)
+    }
   }
 
   const handleLogin = () => {
@@ -176,10 +188,16 @@ export function Header({ onOpenOnboarding }: { onOpenOnboarding: () => void }) {
                     type="button"
                     role="menuitem"
                     onClick={handleLogout}
+                    disabled={isLoggingOut}
                     className="w-full rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-danger transition-colors hover:bg-danger-muted focus-ring"
                   >
-                    Sair
+                    {isLoggingOut ? 'Saindo...' : 'Sair'}
                   </button>
+                  {logoutError && (
+                    <p className="px-3 py-2 text-xs font-semibold text-danger" role="alert">
+                      {logoutError}
+                    </p>
+                  )}
                 </div>
               )}
             </div>

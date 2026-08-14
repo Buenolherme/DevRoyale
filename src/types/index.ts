@@ -3,7 +3,9 @@ export type {
   KnowledgeLevel,
   MainLanguage,
   RegisterInput,
+  RegisterResult,
   LoginInput,
+  AuthState,
 } from './auth'
 export {
   KNOWLEDGE_LEVEL_OPTIONS,
@@ -11,6 +13,12 @@ export {
   getKnowledgeLevelLabel,
   getMainLanguageLabel,
 } from './auth'
+export type {
+  Database,
+  DatabaseProfile,
+  Profile,
+  UpdateProfileInput,
+} from './profile'
 export type { User, UserXP } from './user'
 export type { Achievement, AchievementRarity } from './achievement'
 export type { Challenge, ChallengeDifficulty, ChallengeStatus } from './challenge'

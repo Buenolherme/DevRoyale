@@ -3,6 +3,11 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Logo } from '@/components/layout'
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Select } from '@/components/ui'
 import { AuthServiceError } from '@/lib/auth-service'
+import {
+  PROFILE_DISPLAY_NAME_MAX_LENGTH,
+  isValidUsername,
+  normalizeUsername,
+} from '@/lib/profile-service'
 import { useAuth } from '@/hooks'
 import { ROUTES } from '@/routes/paths'
 import {
@@ -20,6 +25,7 @@ export function CadastroPage() {
   const redirectFrom = (location.state as { from?: string } | null)?.from
 
   const [name, setName] = useState('')
+  const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -32,6 +38,12 @@ export function CadastroPage() {
   const validate = (): boolean => {
     const next: Record<string, string> = {}
     if (!name.trim()) next.name = 'Nome é obrigatório.'
+    else if (name.trim().length > PROFILE_DISPLAY_NAME_MAX_LENGTH) {
+      next.name = `O nome deve ter no máximo ${PROFILE_DISPLAY_NAME_MAX_LENGTH} caracteres.`
+    }
+    if (!isValidUsername(username)) {
+      next.username = 'Use de 3 a 24 caracteres: letras minúsculas, números ou underscore.'
+    }
     if (!email.trim()) next.email = 'E-mail é obrigatório.'
     else if (!isValidEmail(email)) next.email = 'Informe um e-mail válido.'
     if (!password) next.password = 'Senha é obrigatória.'
@@ -46,19 +58,31 @@ export function CadastroPage() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
+    if (isSubmitting) return
     setFormError('')
     if (!validate()) return
 
     setIsSubmitting(true)
     try {
-      await register({
+      const result = await register({
         name,
+        username,
         email,
         password,
         confirmPassword,
         knowledgeLevel,
         mainLanguage,
       })
+      if (result.requiresEmailConfirmation) {
+        navigate(ROUTES.LOGIN, {
+          replace: true,
+          state: {
+            from: redirectFrom,
+            notice: 'Conta criada. Confirme seu e-mail antes de entrar.',
+          },
+        })
+        return
+      }
       navigate(redirectFrom ?? ROUTES.DASHBOARD, { replace: true })
     } catch (err) {
       if (err instanceof AuthServiceError) {
@@ -103,6 +127,20 @@ export function CadastroPage() {
                 error={errors.name}
                 disabled={isSubmitting}
                 autoComplete="name"
+                maxLength={PROFILE_DISPLAY_NAME_MAX_LENGTH}
+              />
+              <Input
+                id="username"
+                label="Username"
+                type="text"
+                placeholder="buenolherme (sem @)"
+                value={username}
+                onChange={(e) => setUsername(normalizeUsername(e.target.value))}
+                error={errors.username}
+                disabled={isSubmitting}
+                autoComplete="username"
+                maxLength={24}
+                spellCheck={false}
               />
               <Input
                 id="email"

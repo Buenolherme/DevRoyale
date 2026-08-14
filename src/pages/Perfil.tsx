@@ -15,11 +15,17 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  Input,
   ProgressBar,
   Select,
   getButtonClassName,
 } from '@/components/ui'
 import { useAuth } from '@/hooks'
+import {
+  PROFILE_DISPLAY_NAME_MAX_LENGTH,
+  ProfileServiceError,
+  normalizeUsername,
+} from '@/lib/profile-service'
 import { ROUTES } from '@/routes/paths'
 import type { AuthUser } from '@/types'
 import {
@@ -82,6 +88,7 @@ function VisitorProfile() {
 }
 
 function AuthenticatedProfile({ user }: { user: AuthUser }) {
+  const { updateProfile } = useAuth()
   const defaultPreferences = useMemo(
     () => createDefaultProfilePreferences(user.knowledgeLevel, user.mainLanguage),
     [user.knowledgeLevel, user.mainLanguage],
@@ -90,19 +97,36 @@ function AuthenticatedProfile({ user }: { user: AuthUser }) {
     getUserProfilePreferences(user.id, defaultPreferences),
   )
   const [draft, setDraft] = useState(preferences)
+  const [publicDraft, setPublicDraft] = useState(() => ({
+    username: user.username,
+    displayName: user.displayName,
+    bio: user.bio ?? preferences.bio,
+    avatarUrl: user.avatarUrl ?? '',
+  }))
   const [isEditing, setIsEditing] = useState(false)
   const [profileFeedback, setProfileFeedback] = useState<string | null>(null)
   const [profileError, setProfileError] = useState<string | null>(null)
   const [isAvatarProcessing, setIsAvatarProcessing] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
 
   const progress = useMemo(() => getUserProgress(user.id), [user.id])
   const achievementSummary = useMemo(() => getAchievementSummary(user.id), [user.id])
   const recentActivities = progress.activityHistory.slice(0, 6)
   const xpToNextLevel = Math.max(0, progress.nextLevelXP - progress.currentLevelXP)
   const visiblePreferences = isEditing ? draft : preferences
+  const visibleDisplayName = isEditing ? publicDraft.displayName : user.displayName
+  const visibleUsername = isEditing ? publicDraft.username : user.username
+  const visibleBio = isEditing ? publicDraft.bio : (user.bio ?? preferences.bio)
+  const visibleAvatarUrl = isEditing ? publicDraft.avatarUrl : user.avatarUrl
 
   const startEditing = () => {
     setDraft(preferences)
+    setPublicDraft({
+      username: user.username,
+      displayName: user.displayName,
+      bio: user.bio ?? preferences.bio,
+      avatarUrl: user.avatarUrl ?? '',
+    })
     setProfileFeedback(null)
     setProfileError(null)
     setIsEditing(true)
@@ -110,26 +134,59 @@ function AuthenticatedProfile({ user }: { user: AuthUser }) {
 
   const cancelEditing = () => {
     setDraft(preferences)
+    setPublicDraft({
+      username: user.username,
+      displayName: user.displayName,
+      bio: user.bio ?? preferences.bio,
+      avatarUrl: user.avatarUrl ?? '',
+    })
     setProfileError(null)
     setIsEditing(false)
   }
 
-  const saveProfile = () => {
+  const saveProfile = async () => {
+    if (isSaving) return
+
     const nextPreferences = {
       ...draft,
-      bio: draft.bio.trim().slice(0, PROFILE_BIO_MAX_LENGTH),
+      bio: publicDraft.bio.trim().slice(0, PROFILE_BIO_MAX_LENGTH),
     }
 
-    if (!saveUserProfilePreferences(user.id, nextPreferences)) {
-      setProfileError('Não foi possível salvar o perfil neste dispositivo.')
-      return
-    }
-
-    setPreferences(nextPreferences)
-    setDraft(nextPreferences)
-    setIsEditing(false)
     setProfileError(null)
-    setProfileFeedback('Perfil atualizado neste dispositivo.')
+    setIsSaving(true)
+
+    try {
+      const updatedProfile = await updateProfile({
+        username: publicDraft.username,
+        displayName: publicDraft.displayName,
+        bio: publicDraft.bio,
+        avatarUrl: publicDraft.avatarUrl,
+      })
+      const localPreferencesSaved = saveUserProfilePreferences(user.id, nextPreferences)
+
+      setPreferences(nextPreferences)
+      setDraft(nextPreferences)
+      setPublicDraft({
+        username: updatedProfile.username,
+        displayName: updatedProfile.displayName,
+        bio: updatedProfile.bio ?? '',
+        avatarUrl: updatedProfile.avatarUrl ?? '',
+      })
+      setIsEditing(false)
+      setProfileFeedback(
+        localPreferencesSaved
+          ? 'Perfil atualizado.'
+          : 'Identidade pública atualizada, mas as preferências locais não puderam ser salvas.',
+      )
+    } catch (error) {
+      setProfileError(
+        error instanceof ProfileServiceError
+          ? error.message
+          : 'Não foi possível atualizar o perfil. Tente novamente.',
+      )
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const handleAvatarChange = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -176,14 +233,25 @@ function AuthenticatedProfile({ user }: { user: AuthUser }) {
 
       <Card variant="premium" className="profile-identity-card mb-6">
         <CardContent className="profile-identity-card__layout">
-          <ProfileAvatar preferences={visiblePreferences} name={user.name} />
+          <ProfileAvatar
+            preferences={visiblePreferences}
+            name={visibleDisplayName}
+            avatarUrl={visibleAvatarUrl}
+          />
 
           <div className="min-w-0">
             <span className="profile-eyebrow">Perfil de desenvolvedor</span>
-            <h2 className="mt-1 truncate text-2xl font-black text-foreground">{user.name}</h2>
+            <h2 className="mt-1 truncate text-2xl font-black text-foreground">
+              {visibleDisplayName}
+            </h2>
+            {visibleUsername && (
+              <p className="mt-1 truncate text-sm font-semibold text-secondary">
+                @{visibleUsername}
+              </p>
+            )}
             <p className="mt-1 truncate text-sm text-muted">{user.email}</p>
             <p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted">
-              {visiblePreferences.bio ||
+              {visibleBio ||
                 'Adicione uma bio curta para contar seus objetivos e sua jornada como Dev.'}
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
@@ -214,15 +282,22 @@ function AuthenticatedProfile({ user }: { user: AuthUser }) {
           <CardHeader>
             <CardTitle id="profile-edit-title">Editar perfil</CardTitle>
             <CardDescription>
-              Informações salvas localmente e vinculadas apenas à sua conta neste dispositivo.
+              A identidade pública é sincronizada. Preferências de aprendizado e progresso
+              continuam neste dispositivo.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
             <div className="grid gap-5 md:grid-cols-[auto_minmax(0,1fr)] md:items-center">
-              <ProfileAvatar preferences={draft} name={user.name} />
+              <ProfileAvatar
+                preferences={draft}
+                name={publicDraft.displayName || user.name}
+                avatarUrl={publicDraft.avatarUrl}
+              />
               <div>
                 <p className="text-sm font-semibold text-foreground">Foto de perfil</p>
-                <p className="mt-1 text-xs text-muted">JPG, PNG ou WebP com até 5 MB.</p>
+                <p className="mt-1 text-xs text-muted">
+                  JPG, PNG ou WebP com até 5 MB. O arquivo enviado permanece local.
+                </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <label className={getButtonClassName({ variant: 'secondary', size: 'sm' })}>
                     {isAvatarProcessing
@@ -253,6 +328,54 @@ function AuthenticatedProfile({ user }: { user: AuthUser }) {
                 </div>
               </div>
             </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <Input
+                id="profile-display-name"
+                label="Nome público"
+                type="text"
+                value={publicDraft.displayName}
+                maxLength={PROFILE_DISPLAY_NAME_MAX_LENGTH}
+                disabled={isSaving}
+                onChange={(event) =>
+                  setPublicDraft((current) => ({
+                    ...current,
+                    displayName: event.target.value,
+                  }))
+                }
+              />
+              <Input
+                id="profile-username"
+                label="Username (sem @)"
+                type="text"
+                value={publicDraft.username}
+                maxLength={24}
+                disabled={isSaving}
+                spellCheck={false}
+                onChange={(event) =>
+                  setPublicDraft((current) => ({
+                    ...current,
+                    username: normalizeUsername(event.target.value),
+                  }))
+                }
+              />
+            </div>
+
+            <Input
+              id="profile-avatar-url"
+              label="URL pública do avatar (opcional)"
+              type="url"
+              placeholder="https://exemplo.com/avatar.png"
+              value={publicDraft.avatarUrl}
+              maxLength={2048}
+              disabled={isSaving}
+              onChange={(event) =>
+                setPublicDraft((current) => ({
+                  ...current,
+                  avatarUrl: event.target.value,
+                }))
+              }
+            />
 
             <div className="grid gap-4 md:grid-cols-2">
               <Select
@@ -289,18 +412,19 @@ function AuthenticatedProfile({ user }: { user: AuthUser }) {
                   Bio curta
                 </label>
                 <span className="text-xs text-muted">
-                  {draft.bio.length}/{PROFILE_BIO_MAX_LENGTH}
+                  {publicDraft.bio.length}/{PROFILE_BIO_MAX_LENGTH}
                 </span>
               </div>
               <textarea
                 id="profile-bio"
                 rows={4}
                 maxLength={PROFILE_BIO_MAX_LENGTH}
-                value={draft.bio}
+                value={publicDraft.bio}
                 placeholder="Conte brevemente o que você está aprendendo ou quer construir."
                 className="w-full resize-y rounded-xl border border-border bg-background px-4 py-3 text-sm leading-relaxed text-foreground placeholder:text-muted focus-visible:border-secondary focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-secondary"
+                disabled={isSaving}
                 onChange={(event) =>
-                  setDraft((current) => ({ ...current, bio: event.target.value }))
+                  setPublicDraft((current) => ({ ...current, bio: event.target.value }))
                 }
               />
             </div>
@@ -314,10 +438,10 @@ function AuthenticatedProfile({ user }: { user: AuthUser }) {
               <Button
                 type="button"
                 variant="gold"
-                disabled={isAvatarProcessing}
-                onClick={saveProfile}
+                disabled={isAvatarProcessing || isSaving}
+                onClick={() => void saveProfile()}
               >
-                Salvar perfil
+                {isSaving ? 'Salvando...' : 'Salvar perfil'}
               </Button>
             </div>
           </CardContent>
