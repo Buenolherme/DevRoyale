@@ -11,7 +11,7 @@ import type {
 } from '@/types'
 
 const ROOM_COLUMNS =
-  'id, code, host_id, visibility, status, language, difficulty, match_format, allow_spectators, max_players, countdown_started_at, created_at, updated_at, closed_at'
+  'id, code, host_id, visibility, room_kind, status, language, difficulty, match_format, allow_spectators, max_players, countdown_started_at, created_at, updated_at, closed_at'
 const MEMBER_COLUMNS = 'room_id, user_id, role, ready, joined_at, updated_at'
 const INVITE_COLUMNS =
   'id, room_id, sender_id, recipient_id, status, created_at, expires_at'
@@ -28,6 +28,7 @@ export type RoomErrorCode =
   | 'PLAYERS_NOT_READY'
   | 'INVITE_UNAVAILABLE'
   | 'SOCIAL_RESTRICTION'
+  | 'QUICK_MATCH_RESTRICTED'
   | 'NETWORK'
   | 'UNEXPECTED'
 
@@ -76,6 +77,13 @@ function mapRoomError(error: unknown): RoomServiceError {
   if (error instanceof RoomServiceError) return error
 
   const message = errorMessage(error)
+  if (/quick_match_restricted/.test(message)) {
+    return new RoomServiceError(
+      'Esta ação não está disponível em partidas rápidas.',
+      'QUICK_MATCH_RESTRICTED',
+    )
+  }
+
   const mappings: Array<[RegExp, string, RoomErrorCode]> = [
     [/not_authenticated/, 'Entre na sua conta para acessar o Multiplayer.', 'NOT_AUTHENTICATED'],
     [/room_not_found/, 'Sala não encontrada. Confira o código e tente novamente.', 'ROOM_NOT_FOUND'],
@@ -145,6 +153,7 @@ function toSocialProfile(row: PublicProfileRow): SocialProfile {
 function toRoom(row: DatabaseRoom, members: Room['members'] = []): Room {
   return {
     id: row.id,
+    roomKind: row.room_kind,
     code: row.code,
     hostId: row.host_id,
     visibility: row.visibility,

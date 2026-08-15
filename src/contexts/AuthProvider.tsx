@@ -8,6 +8,7 @@ import {
   signUp,
 } from '@/lib/auth-service'
 import { getProfile, updateCurrentProfile } from '@/lib/profile-service'
+import { cancelActiveQueueBestEffort } from '@/lib/matchmaking-service'
 import type {
   AuthState,
   LoginInput,
@@ -119,6 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 
   const logout = useCallback(async () => {
+    await cancelActiveQueueBestEffort()
     await signOut()
     await hydrateSession(null)
   }, [hydrateSession])

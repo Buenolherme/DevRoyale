@@ -25,7 +25,132 @@
 
 .multiplayer-quick-card {
   background:
+    radial-gradient(circle at 88% 10%, color-mix(in srgb, var(--color-online) 12%, transparent), transparent 32%),
     linear-gradient(145deg, color-mix(in srgb, var(--color-bg-elevated) 96%, transparent), color-mix(in srgb, var(--color-bg-subtle) 72%, transparent));
+}
+
+.quick-match-promises {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.quick-match-promises span {
+  border: 1px solid color-mix(in srgb, var(--color-online) 25%, var(--color-border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-online) 8%, var(--color-bg-subtle));
+  padding: 0.35rem 0.65rem;
+  color: var(--color-text-muted);
+  font-size: 0.7rem;
+  font-weight: 850;
+}
+
+.quick-match-status-card {
+  display: grid;
+  min-height: min(34rem, 68vh);
+  place-items: center;
+  gap: 1rem;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--color-primary) 16%, transparent), transparent 38%),
+    var(--surface-arena);
+  padding: clamp(2rem, 7vw, 5rem);
+  text-align: center;
+}
+
+.quick-match-status-card .quick-match-elapsed {
+  color: var(--color-text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: clamp(2.4rem, 9vw, 4.8rem);
+  line-height: 1;
+}
+
+.quick-match-radar {
+  position: relative;
+  display: grid;
+  width: 7.5rem;
+  height: 7.5rem;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 45%, transparent);
+  border-radius: 999px;
+}
+
+.quick-match-radar::before,
+.quick-match-radar::after {
+  position: absolute;
+  inset: 14%;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 35%, transparent);
+  border-radius: inherit;
+  content: '';
+}
+
+.quick-match-radar::after {
+  inset: 30%;
+}
+
+.quick-match-radar span {
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 999px;
+  background: var(--color-primary);
+  box-shadow: 0 0 1.5rem var(--color-primary);
+  animation: quick-match-pulse 1.4s ease-in-out infinite;
+}
+
+.quick-match-status-card--found {
+  background:
+    radial-gradient(circle, color-mix(in srgb, var(--color-secondary) 18%, transparent), transparent 42%),
+    var(--surface-arena);
+}
+
+.quick-match-versus {
+  display: flex;
+  align-items: center;
+  gap: clamp(1rem, 5vw, 2.5rem);
+}
+
+.quick-match-versus span {
+  display: grid;
+  width: 5rem;
+  height: 5rem;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--color-secondary) 42%, var(--color-border));
+  border-radius: 1.3rem;
+  background: var(--color-secondary-muted);
+  color: var(--color-secondary-light);
+  font-size: 1.5rem;
+  font-weight: 950;
+}
+
+.quick-match-versus > div {
+  display: grid;
+  justify-items: center;
+  gap: 0.55rem;
+}
+
+.quick-match-versus small {
+  max-width: 8rem;
+  overflow: hidden;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quick-match-versus strong {
+  color: var(--color-text);
+  font-size: 1.5rem;
+  font-style: italic;
+}
+
+@keyframes quick-match-pulse {
+  0%, 100% { transform: scale(0.72); opacity: 0.6; }
+  50% { transform: scale(1.15); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quick-match-radar span { animation: none; }
 }
 
 .multiplayer-create-card {
@@ -192,6 +317,25 @@
   border: 1px solid color-mix(in srgb, var(--color-secondary) 30%, var(--color-border));
   border-radius: 0.9rem;
   background: var(--color-secondary-muted);
+}
+
+.lobby-player__avatar--quick {
+  border-color: color-mix(in srgb, var(--color-primary) 35%, var(--color-border));
+  background: var(--color-primary-muted);
+  color: var(--color-primary-light);
+  font-size: 1.15rem;
+  font-weight: 950;
+}
+
+.quick-match-opponent-left {
+  display: grid;
+  min-height: 24rem;
+  place-items: center;
+  align-content: center;
+  gap: 1rem;
+  background:
+    radial-gradient(circle, color-mix(in srgb, var(--color-warning) 12%, transparent), transparent 44%),
+    var(--surface-arena);
 }
 
 .lobby-player p,

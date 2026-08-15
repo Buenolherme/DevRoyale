@@ -3,6 +3,10 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { CrownIcon } from '@/components/layout'
 import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Select } from '@/components/ui'
 import { useAuth, usePresence } from '@/hooks'
+import {
+  subscribeToMatchmaking,
+  unsubscribeFromMatchmaking,
+} from '@/lib/matchmaking-realtime-service'
 import { subscribeRoom } from '@/lib/room-realtime-service'
 import {
   RoomServiceError,
@@ -53,12 +57,14 @@ export function LobbyPage() {
   })
   const [invitePanelOpen, setInvitePanelOpen] = useState(false)
   const [clockMs, setClockMs] = useState(() => Date.now())
+  const [opponentLeft, setOpponentLeft] = useState(false)
 
   const currentMember = room?.members.find((member) => member.userId === user?.id)
-  const isHost = room?.hostId === user?.id
+  const isQuickMatch = room?.roomKind === 'quick_match'
+  const isHost = room?.roomKind === 'custom' && room.hostId === user?.id
   const roomId = room?.id
   const canStart = Boolean(
-    isHost && room?.members.length === 2 && room.members.every((member) => member.ready),
+    !isQuickMatch && isHost && room?.members.length === 2 && room.members.every((member) => member.ready),
   )
 
   const syncSettings = useCallback((nextRoom: Room) => {
@@ -98,10 +104,8 @@ export function LobbyPage() {
       setLoading(true)
       setError('')
       try {
-        const [nextRoom, nextFriends] = await Promise.all([
-          loadRoom(true),
-          getFriends(),
-        ])
+        const nextRoom = await loadRoom(true)
+        const nextFriends = nextRoom.roomKind === 'custom' ? await getFriends() : []
         if (!active) return
         setRoom(nextRoom)
         setFriends(nextFriends)
@@ -132,6 +136,10 @@ export function LobbyPage() {
                 loadError instanceof RoomServiceError &&
                 (loadError.code === 'NOT_ROOM_MEMBER' || loadError.code === 'ROOM_NOT_FOUND')
               ) {
+                if (room?.roomKind === 'quick_match') {
+                  setOpponentLeft(true)
+                  return
+                }
                 navigate(ROUTES.MULTIPLAYER, {
                   replace: true,
                   state: { notice: 'Você foi removido da sala pelo host.' },
@@ -143,7 +151,32 @@ export function LobbyPage() {
         },
       },
     )
-  }, [loadRoom, navigate, roomId, user])
+  }, [loadRoom, navigate, room?.roomKind, roomId, user])
+
+  useEffect(() => {
+    if (!isQuickMatch || opponentLeft) return
+    const intervalId = window.setInterval(() => {
+      void loadRoom(false).catch((loadError: unknown) => {
+        if (
+          loadError instanceof RoomServiceError &&
+          (loadError.code === 'NOT_ROOM_MEMBER' || loadError.code === 'ROOM_NOT_FOUND')
+        ) {
+          setOpponentLeft(true)
+        }
+      })
+    }, 8_000)
+    return () => window.clearInterval(intervalId)
+  }, [isQuickMatch, loadRoom, opponentLeft])
+
+  useEffect(() => {
+    if (!isQuickMatch || !roomId || !user) return
+    const channel = subscribeToMatchmaking(user.id, (event) => {
+      if (event.type === 'queue_cancelled' && event.matchedRoomId === roomId) {
+        setOpponentLeft(true)
+      }
+    })
+    return () => void unsubscribeFromMatchmaking(channel)
+  }, [isQuickMatch, roomId, user])
 
   useEffect(() => {
     if (room?.status !== 'starting' || !room.countdownStartedAt) return
@@ -175,11 +208,17 @@ export function LobbyPage() {
   }
 
   const handleLeave = async () => {
-    if (!room || !window.confirm('Sair desta sala?')) return
+    const confirmation = isQuickMatch
+      ? 'Sair da partida rápida? O lobby será encerrado para os dois jogadores.'
+      : 'Sair desta sala?'
+    if (!room || !window.confirm(confirmation)) return
     setBusyAction('leave')
     try {
       await leaveRoom(room.id)
-      navigate(ROUTES.MULTIPLAYER, { replace: true, state: { notice: 'Você saiu da sala.' } })
+      navigate(ROUTES.MULTIPLAYER, {
+        replace: true,
+        state: { notice: isQuickMatch ? 'Você saiu da partida rápida.' : 'Você saiu da sala.' },
+      })
     } catch (actionError) {
       setError(roomErrorMessage(actionError))
       setBusyAction(null)
@@ -223,9 +262,15 @@ export function LobbyPage() {
     <div className="page-container lobby-page">
       <header className="lobby-hero">
         <div>
-          <span className="lobby-eyebrow">Lobby online 1v1</span>
-          <h1>Sala {room.code}</h1>
-          <p>O banco mantém o estado oficial; o canal privado atualiza os dois jogadores.</p>
+          <span className="lobby-eyebrow">
+            {isQuickMatch ? 'Partida rápida · 1v1' : 'Lobby online 1v1'}
+          </span>
+          <h1>{isQuickMatch ? 'Duelo encontrado' : `Sala ${room.code}`}</h1>
+          <p>
+            {isQuickMatch
+              ? 'Sem host ou configurações: quando os dois estiverem prontos, a contagem começa automaticamente.'
+              : 'O banco mantém o estado oficial; o canal privado atualiza os dois jogadores.'}
+          </p>
         </div>
         <div className="lobby-connection">
           <span className={realtimeConnected ? 'is-online' : ''} aria-hidden="true" />
@@ -254,6 +299,34 @@ export function LobbyPage() {
         </section>
       )}
 
+      {opponentLeft ? (
+        <Card variant="premium" className="quick-match-opponent-left text-center" aria-live="assertive">
+          <Badge variant="warning">Partida encerrada</Badge>
+          <CardTitle>O adversário saiu</CardTitle>
+          <CardDescription>Este lobby foi encerrado para os dois jogadores.</CardDescription>
+          <div className="mt-5 flex flex-wrap justify-center gap-3">
+            <Button
+              type="button"
+              onClick={() => navigate(ROUTES.MULTIPLAYER, {
+                replace: true,
+                state: {
+                  notice: 'O adversário saiu. Iniciando uma nova busca.',
+                  autoSearch: true,
+                  quickPreferences: {
+                    language: room.language,
+                    difficulty: room.difficulty,
+                  },
+                },
+              })}
+            >
+              Buscar novamente
+            </Button>
+            <Button type="button" variant="secondary" onClick={() => navigate(ROUTES.MULTIPLAYER, { replace: true })}>
+              Voltar ao Multiplayer
+            </Button>
+          </div>
+        </Card>
+      ) : (
       <div className="lobby-grid">
         <section className="space-y-6">
           <Card variant="premium">
@@ -272,11 +345,13 @@ export function LobbyPage() {
                 return (
                   <div key={member.userId} className={`lobby-player ${member.ready ? 'lobby-player--ready' : ''}`}>
                     <div className="flex min-w-0 items-center gap-3">
-                      <div className="lobby-player__avatar"><CrownIcon size={30} /></div>
+                      <div className={`lobby-player__avatar ${isQuickMatch ? 'lobby-player__avatar--quick' : ''}`}>
+                        {isQuickMatch ? member.profile.displayName.slice(0, 1).toUpperCase() : <CrownIcon size={30} />}
+                      </div>
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
                           <strong className="truncate">{member.profile.displayName}</strong>
-                          {member.role === 'host' && <Badge variant="gold">Host</Badge>}
+                          {!isQuickMatch && member.role === 'host' && <Badge variant="gold">Host</Badge>}
                         </div>
                         <p>@{member.profile.username}</p>
                         <small className={connected ? 'text-success' : 'text-muted'}>{connected ? '● Conectado' : '○ Reconectando'}</small>
@@ -308,7 +383,10 @@ export function LobbyPage() {
           </Card>
 
           <Card>
-            <CardHeader><CardTitle>Controles da sala</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle>{isQuickMatch ? 'Confirmação dos jogadores' : 'Controles da sala'}</CardTitle>
+              {isQuickMatch && <CardDescription>A contagem de três segundos começa no segundo pronto.</CardDescription>}
+            </CardHeader>
             <CardContent className="flex flex-wrap gap-3">
               <Button
                 type="button"
@@ -372,6 +450,24 @@ export function LobbyPage() {
         </section>
 
         <aside className="space-y-6">
+          {isQuickMatch ? (
+            <Card variant="premium">
+              <CardHeader>
+                <Badge variant="online" className="w-fit">Regras automáticas</Badge>
+                <CardTitle>Partida rápida</CardTitle>
+                <CardDescription>As regras foram fixadas pelo matchmaking e não podem ser alteradas.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="room-meta-row">
+                  <span>{ROOM_LANGUAGE_LABELS[room.language]}</span>
+                  <span>{ROOM_DIFFICULTY_LABELS[room.difficulty]}</span>
+                  <span>{MATCH_FORMAT_LABELS[room.matchFormat]}</span>
+                  <span>Sem espectadores</span>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+          <>
           <Card variant="premium">
             <CardHeader>
               <CardTitle>Configuração</CardTitle>
@@ -401,13 +497,16 @@ export function LobbyPage() {
               <Button type="button" variant="secondary" fullWidth className="mt-3" onClick={() => void navigator.clipboard.writeText(room.code).then(() => setFeedback('Código copiado.')).catch(() => setError('Não foi possível copiar o código.'))}>Copiar código</Button>
             </CardContent>
           </Card>
+          </>
+          )}
 
           <div className="grid gap-2">
-            <Button type="button" variant="secondary" fullWidth disabled={Boolean(busyAction)} onClick={() => void handleLeave()}>Sair da sala</Button>
+            <Button type="button" variant="secondary" fullWidth disabled={Boolean(busyAction)} onClick={() => void handleLeave()}>{isQuickMatch ? 'Sair da partida' : 'Sair da sala'}</Button>
             {isHost && <Button type="button" variant="ghost" fullWidth disabled={Boolean(busyAction)} onClick={() => void handleCancel()}>Cancelar sala</Button>}
           </div>
         </aside>
       </div>
+      )}
     </div>
   )
 }

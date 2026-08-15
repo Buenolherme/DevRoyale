@@ -12,11 +12,16 @@ import type {
   MatchFormat,
   RoomDifficulty,
   RoomInviteStatus,
+  RoomKind,
   RoomLanguage,
   RoomMemberRole,
   RoomStatus,
   RoomVisibility,
 } from './room'
+import type {
+  DatabaseMatchmakingTicket,
+  MatchmakingStatus,
+} from './matchmaking'
 
 type ProfileInsert = Omit<DatabaseProfile, 'created_at' | 'updated_at'> & {
   created_at?: string
@@ -65,6 +70,23 @@ type RoomInviteInsert = Omit<DatabaseRoomInvite, 'id' | 'status' | 'created_at' 
 }
 
 type RoomInviteUpdate = Partial<Pick<DatabaseRoomInvite, 'status' | 'expires_at'>>
+
+type MatchmakingTicketInsert = Omit<
+  DatabaseMatchmakingTicket,
+  'ticket_id' | 'status' | 'joined_at' | 'heartbeat_at' | 'updated_at' | 'matched_room_id' | 'matched_at'
+> & {
+  ticket_id?: string
+  status?: MatchmakingStatus
+  joined_at?: string
+  heartbeat_at?: string
+  updated_at?: string
+  matched_room_id?: string | null
+  matched_at?: string | null
+}
+
+type MatchmakingTicketUpdate = Partial<
+  Omit<DatabaseMatchmakingTicket, 'ticket_id' | 'user_id' | 'joined_at'>
+>
 
 export type Database = {
   public: {
@@ -133,6 +155,12 @@ export type Database = {
         Row: DatabaseRoomInvite
         Insert: RoomInviteInsert
         Update: RoomInviteUpdate
+        Relationships: []
+      }
+      matchmaking_queue: {
+        Row: DatabaseMatchmakingTicket
+        Insert: MatchmakingTicketInsert
+        Update: MatchmakingTicketUpdate
         Relationships: []
       }
     }
@@ -207,6 +235,26 @@ export type Database = {
         Args: { p_limit?: number }
         Returns: DatabasePublicRoom[]
       }
+      join_quick_match_queue: {
+        Args: { p_language: RoomLanguage; p_difficulty: RoomDifficulty }
+        Returns: DatabaseMatchmakingTicket
+      }
+      poll_quick_match: {
+        Args: { p_ticket_id: string }
+        Returns: DatabaseMatchmakingTicket
+      }
+      heartbeat_quick_match: {
+        Args: { p_ticket_id: string }
+        Returns: DatabaseMatchmakingTicket
+      }
+      cancel_quick_match: {
+        Args: { p_ticket_id: string }
+        Returns: DatabaseMatchmakingTicket
+      }
+      get_quick_match_status: {
+        Args: { p_ticket_id?: string | null }
+        Returns: DatabaseMatchmakingTicket | null
+      }
     }
     Enums: {
       friendship_status: FriendshipStatus
@@ -217,6 +265,8 @@ export type Database = {
       match_format: MatchFormat
       room_member_role: RoomMemberRole
       room_invite_status: RoomInviteStatus
+      room_kind: RoomKind
+      matchmaking_status: MatchmakingStatus
     }
     CompositeTypes: Record<never, never>
   }

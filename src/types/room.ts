@@ -1,6 +1,7 @@
 import type { SocialProfile } from './social'
 
 export type RoomVisibility = 'public' | 'private'
+export type RoomKind = 'custom' | 'quick_match'
 export type RoomStatus =
   | 'waiting'
   | 'ready'
@@ -16,6 +17,7 @@ export type RoomInviteStatus = 'pending' | 'accepted' | 'declined' | 'expired'
 
 export type DatabaseRoom = {
   id: string
+  room_kind: RoomKind
   code: string
   host_id: string
   visibility: RoomVisibility
@@ -61,6 +63,7 @@ export interface RoomMember {
 
 export interface Room {
   id: string
+  roomKind: RoomKind
   code: string
   hostId: string
   visibility: RoomVisibility

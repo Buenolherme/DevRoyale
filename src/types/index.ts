@@ -39,6 +39,7 @@ export type {
   RoomInvite,
   RoomInviteRealtimeEvent,
   RoomInviteStatus,
+  RoomKind,
   RoomLanguage,
   RoomMember,
   RoomMemberRole,
@@ -47,6 +48,14 @@ export type {
   RoomStatus,
   RoomVisibility,
 } from './room'
+export type {
+  DatabaseMatchmakingTicket,
+  MatchmakingRealtimeEvent,
+  MatchmakingStatus,
+  MatchmakingTicket,
+  QuickMatchPreferences,
+  QuickMatchResult,
+} from './matchmaking'
 export {
   MATCH_FORMAT_LABELS,
   ROOM_DIFFICULTY_LABELS,
