@@ -22,6 +22,20 @@ import type {
   DatabaseMatchmakingTicket,
   MatchmakingStatus,
 } from './matchmaking'
+import type {
+  DatabaseMultiplayerChallenge,
+  DatabaseMultiplayerMatch,
+  DatabaseMultiplayerMatchPlayer,
+  DatabaseMultiplayerRound,
+  DatabaseMultiplayerSubmission,
+  MultiplayerMatchState,
+  MultiplayerMatchStatus,
+  MultiplayerPlayerStatus,
+  MultiplayerRoundStatus,
+  MultiplayerSubmissionMode,
+  MultiplayerSubmissionStatus,
+  MultiplayerValidationType,
+} from './multiplayer-battle'
 
 type ProfileInsert = Omit<DatabaseProfile, 'created_at' | 'updated_at'> & {
   created_at?: string
@@ -163,6 +177,36 @@ export type Database = {
         Update: MatchmakingTicketUpdate
         Relationships: []
       }
+      multiplayer_challenges: {
+        Row: DatabaseMultiplayerChallenge
+        Insert: Omit<DatabaseMultiplayerChallenge, 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Omit<DatabaseMultiplayerChallenge, 'id' | 'created_at'>>
+        Relationships: []
+      }
+      multiplayer_matches: {
+        Row: DatabaseMultiplayerMatch
+        Insert: Omit<DatabaseMultiplayerMatch, 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Omit<DatabaseMultiplayerMatch, 'id' | 'created_at'>>
+        Relationships: []
+      }
+      multiplayer_match_players: {
+        Row: DatabaseMultiplayerMatchPlayer
+        Insert: DatabaseMultiplayerMatchPlayer
+        Update: Partial<Pick<DatabaseMultiplayerMatchPlayer, 'rounds_won' | 'status' | 'updated_at'>>
+        Relationships: []
+      }
+      multiplayer_rounds: {
+        Row: DatabaseMultiplayerRound
+        Insert: Omit<DatabaseMultiplayerRound, 'id' | 'created_at'>
+        Update: Partial<Omit<DatabaseMultiplayerRound, 'id' | 'match_id' | 'round_number' | 'created_at'>>
+        Relationships: []
+      }
+      multiplayer_submissions: {
+        Row: DatabaseMultiplayerSubmission
+        Insert: Omit<DatabaseMultiplayerSubmission, 'id' | 'created_at'>
+        Update: Partial<Omit<DatabaseMultiplayerSubmission, 'id' | 'created_at'>>
+        Relationships: []
+      }
     }
     Views: Record<never, never>
     Functions: {
@@ -255,6 +299,22 @@ export type Database = {
         Args: { p_ticket_id?: string | null }
         Returns: DatabaseMatchmakingTicket | null
       }
+      activate_multiplayer_match: {
+        Args: { p_room_id: string }
+        Returns: DatabaseMultiplayerMatch
+      }
+      advance_multiplayer_round: {
+        Args: { p_match_id: string }
+        Returns: DatabaseMultiplayerMatch
+      }
+      get_multiplayer_match_state: {
+        Args: { p_match_id?: string | null }
+        Returns: MultiplayerMatchState | null
+      }
+      surrender_multiplayer_match: {
+        Args: { p_match_id: string }
+        Returns: DatabaseMultiplayerMatch
+      }
     }
     Enums: {
       friendship_status: FriendshipStatus
@@ -267,6 +327,12 @@ export type Database = {
       room_invite_status: RoomInviteStatus
       room_kind: RoomKind
       matchmaking_status: MatchmakingStatus
+      multiplayer_match_status: MultiplayerMatchStatus
+      multiplayer_player_status: MultiplayerPlayerStatus
+      multiplayer_round_status: MultiplayerRoundStatus
+      multiplayer_submission_mode: MultiplayerSubmissionMode
+      multiplayer_submission_status: MultiplayerSubmissionStatus
+      multiplayer_validation_type: MultiplayerValidationType
     }
     CompositeTypes: Record<never, never>
   }

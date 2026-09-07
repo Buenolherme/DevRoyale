@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { CrownIcon } from '@/components/layout'
 import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Select } from '@/components/ui'
@@ -8,6 +8,10 @@ import {
   unsubscribeFromMatchmaking,
 } from '@/lib/matchmaking-realtime-service'
 import { subscribeRoom } from '@/lib/room-realtime-service'
+import {
+  activateMatch,
+  MultiplayerBattleServiceError,
+} from '@/lib/multiplayer-battle-service'
 import {
   RoomServiceError,
   cancelRoom,
@@ -58,6 +62,7 @@ export function LobbyPage() {
   const [invitePanelOpen, setInvitePanelOpen] = useState(false)
   const [clockMs, setClockMs] = useState(() => Date.now())
   const [opponentLeft, setOpponentLeft] = useState(false)
+  const activationRoomRef = useRef<string | null>(null)
 
   const currentMember = room?.members.find((member) => member.userId === user?.id)
   const isQuickMatch = room?.roomKind === 'quick_match'
@@ -192,6 +197,48 @@ export function LobbyPage() {
     : null
   const arenaReady = countdownRemaining !== null && countdownRemaining <= 0
 
+  useEffect(() => {
+    if (!room || (room.status !== 'in_match' && !arenaReady)) return
+    if (activationRoomRef.current === room.id) return
+
+    let active = true
+    let retryTimer: number | null = null
+    activationRoomRef.current = room.id
+
+    const openArena = async () => {
+      try {
+        const match = await activateMatch(room.id)
+        if (active) navigate(battleMatchPath(match.id), { replace: true })
+      } catch (activationError) {
+        if (
+          active &&
+          activationError instanceof MultiplayerBattleServiceError &&
+          activationError.code === 'NOT_ACTIVE'
+        ) {
+          activationRoomRef.current = null
+          retryTimer = window.setTimeout(openArena, 350)
+          return
+        }
+
+        activationRoomRef.current = null
+        if (active) {
+          setError(
+            activationError instanceof MultiplayerBattleServiceError
+              ? activationError.message
+              : 'Não foi possível abrir a Arena.',
+          )
+        }
+      }
+    }
+
+    void openArena()
+
+    return () => {
+      active = false
+      if (retryTimer !== null) window.clearTimeout(retryTimer)
+    }
+  }, [arenaReady, navigate, room])
+
   const runAction = async (key: string, action: () => Promise<unknown>) => {
     if (busyAction) return
     setBusyAction(key)
@@ -291,9 +338,8 @@ export function LobbyPage() {
           ) : (
             <>
               <span>Countdown concluído</span>
-              <strong className="lobby-countdown__ready">Arena pronta</strong>
-              <p>O motor multiplayer chega na próxima etapa.</p>
-              <Button type="button" onClick={() => navigate(battleMatchPath(room.id))}>Ver prévia da Arena</Button>
+              <strong className="lobby-countdown__ready">Valendo!</strong>
+              <p>Selecionando o desafio oficial e abrindo a mesma Arena para os dois jogadores...</p>
             </>
           )}
         </section>

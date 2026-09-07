@@ -56,6 +56,27 @@ export type {
   QuickMatchPreferences,
   QuickMatchResult,
 } from './matchmaking'
+export type {
+  DatabaseMultiplayerChallenge,
+  DatabaseMultiplayerMatch,
+  DatabaseMultiplayerMatchPlayer,
+  DatabaseMultiplayerRound,
+  DatabaseMultiplayerSubmission,
+  JudgeSubmissionResponse,
+  MultiplayerBattleRealtimeEvent,
+  MultiplayerChallenge,
+  MultiplayerMatch,
+  MultiplayerMatchPlayer,
+  MultiplayerMatchState,
+  MultiplayerMatchStatus,
+  MultiplayerPlayerStatus,
+  MultiplayerRound,
+  MultiplayerRoundStatus,
+  MultiplayerSubmissionMode,
+  MultiplayerSubmissionResult,
+  MultiplayerSubmissionStatus,
+  MultiplayerValidationType,
+} from './multiplayer-battle'
 export {
   MATCH_FORMAT_LABELS,
   ROOM_DIFFICULTY_LABELS,
