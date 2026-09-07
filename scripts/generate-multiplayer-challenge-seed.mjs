@@ -138,6 +138,16 @@ const specialFunctionCases = {
       },
       expected: { results: ['A', 'B', 'C', 'D', 'E'], withinLimit: true },
     },
+    {
+      input: {
+        tasks: [
+          { value: 1, delayMs: 2 },
+          { value: 2, delayMs: 7 },
+          { value: 3, delayMs: 1 },
+        ],
+      },
+      expected: { results: [1, 2, 3], withinLimit: true },
+    },
   ],
   'battle-v1-javascript-advanced-2': [
     {
@@ -226,6 +236,67 @@ const sqlCases = {
   },
 }
 
+const sqlHiddenCases = {
+  'sql-beginner-active-users': [{
+    setupSql: "CREATE TABLE usuarios(nome TEXT, email TEXT, ativo INTEGER); INSERT INTO usuarios VALUES ('Duda','duda@dev.test',0),('Eva','eva@dev.test',1),('Fábio','fabio@dev.test',1);",
+    expected: [['Eva', 'eva@dev.test'], ['Fábio', 'fabio@dev.test']],
+    sortRows: true,
+  }],
+  'sql-beginner-products': [{
+    setupSql: "CREATE TABLE produtos(nome TEXT); INSERT INTO produtos VALUES ('Zíper'),('Cabo'),('Adaptador');",
+    expected: [['Adaptador'], ['Cabo'], ['Zíper']],
+  }],
+  'sql-basic-category-count': [{
+    setupSql: "CREATE TABLE produtos(id INTEGER, categoria TEXT); INSERT INTO produtos VALUES (1,'hardware'),(2,'software'),(3,'hardware'),(4,'hardware'),(5,'livros');",
+    expected: [['hardware', 3], ['livros', 1], ['software', 1]],
+    sortRows: true,
+  }],
+  'sql-intermediate-orders': [{
+    setupSql: "CREATE TABLE clientes(id INTEGER, nome TEXT); CREATE TABLE pedidos(id INTEGER, cliente_id INTEGER, total REAL); INSERT INTO clientes VALUES (3,'Clara'),(4,'Diego'); INSERT INTO pedidos VALUES (21,4,125.5),(20,3,30);",
+    expected: [[20, 'Clara', 30], [21, 'Diego', 125.5]],
+    sortRows: true,
+  }],
+  'battle-v1-sql-never-1': [{
+    setupSql: "CREATE TABLE players(name TEXT, level INTEGER); INSERT INTO players VALUES ('Mia',2),('Noah',9),('Otto',5);",
+    expected: [['Mia', 2], ['Noah', 9], ['Otto', 5]],
+    sortRows: true,
+  }],
+  'battle-v1-sql-never-2': [{
+    setupSql: "CREATE TABLE players(id INTEGER, name TEXT, level INTEGER, active BOOLEAN); INSERT INTO players VALUES (3,'Mia',2,FALSE),(4,'Noah',9,TRUE),(5,'Otto',5,TRUE);",
+    expected: [[4, 'Noah', 9, 1], [5, 'Otto', 5, 1]],
+    sortRows: true,
+  }],
+  'battle-v1-sql-basic-1': [{
+    setupSql: "CREATE TABLE products(id INTEGER, category TEXT); INSERT INTO products VALUES (1,'games'),(2,'books'),(3,'games'),(4,'games'),(5,'music'),(6,'music');",
+    expected: [['games', 3], ['music', 2], ['books', 1]],
+  }],
+  'battle-v1-sql-basic-2': [{
+    setupSql: "CREATE TABLE customers(id INTEGER, name TEXT); CREATE TABLE orders(id INTEGER, customer_id INTEGER); INSERT INTO customers VALUES (7,'Cora'),(8,'Davi'); INSERT INTO orders VALUES (32,8),(31,7),(33,7);",
+    expected: [[31, 'Cora'], [32, 'Davi'], [33, 'Cora']],
+    sortRows: true,
+  }],
+  'battle-v1-sql-intermediate-1': [{
+    setupSql: "CREATE TABLE players(name TEXT, team_id INTEGER, score INTEGER); INSERT INTO players VALUES ('E',3,40),('F',3,20),('G',3,20),('H',4,5);",
+    expected: [['E', 3, 1], ['F', 3, 2], ['G', 3, 2], ['H', 4, 1]],
+    sortRows: true,
+  }],
+  'battle-v1-sql-intermediate-2': [{
+    setupSql: 'CREATE TABLE order_items(order_id INTEGER, price REAL, quantity INTEGER); INSERT INTO order_items VALUES (4,25,5),(5,99,1),(6,40,3),(7,10,11);',
+    expected: [[4, 125], [6, 120], [7, 110]],
+    sortRows: true,
+  }],
+  'battle-v1-sql-advanced-1': [{
+    setupSql: "CREATE TABLE categories(id INTEGER, parent_id INTEGER, name TEXT); INSERT INTO categories VALUES (1,NULL,'root'),(2,1,'api'),(3,2,'rest'),(4,3,'auth'),(8,NULL,'outside');",
+    expected: [[1, null, 'root'], [2, 1, 'api'], [3, 2, 'rest'], [4, 3, 'auth']],
+    sortRows: true,
+  }],
+  'battle-v1-sql-advanced-3': [{
+    setupSql: "CREATE TABLE preferences(player_id INTEGER PRIMARY KEY, theme TEXT); INSERT INTO preferences VALUES (1,'solarized');",
+    verificationSql: 'SELECT player_id, theme FROM preferences WHERE player_id = 1;',
+    expected: [[1, 'dark']],
+  }],
+}
+
 const htmlRules = {
   'html-css-never-hello': ['<h1[^>]*>\\s*hello,\\s*world!\\s*</h1>'],
   'html-css-beginner-button': ['<button[^>]*class=["\\x27][^"\\x27]*battle-button', 'entrar na batalha', '\\.battle-button\\s*\\{[^}]*background(?:-color)?\\s*:', '\\.battle-button\\s*\\{[^}]*color\\s*:\\s*(?:white|#fff(?:fff)?)', '\\.battle-button\\s*\\{[^}]*padding\\s*:'],
@@ -246,14 +317,20 @@ const htmlRules = {
 function publicAndPrivateTests(challenge) {
   const specialCases = specialFunctionCases[challenge.id]
   if (specialCases) {
-    return { publicExamples: specialCases.slice(0, 1), privateTests: specialCases }
+    return {
+      publicExamples: specialCases.slice(0, 1),
+      privateTests: specialCases.slice(1).length > 0 ? specialCases.slice(1) : specialCases,
+    }
   }
 
   const mappedFunctionCases = functionCases[challenge.id]
   if (mappedFunctionCases || challenge.validationRules?.strategy === 'function') {
     const cases = mappedFunctionCases ?? []
     const mapped = cases.map(({ args, expected }) => ({ input: { args }, expected }))
-    return { publicExamples: mapped.slice(0, 1), privateTests: mapped }
+    return {
+      publicExamples: mapped.slice(0, 1),
+      privateTests: mapped.slice(1).length > 0 ? mapped.slice(1) : mapped,
+    }
   }
 
   const mappedOutput = programOutputCases[challenge.id]
@@ -270,29 +347,44 @@ function publicAndPrivateTests(challenge) {
   if (challenge.language === 'sql') {
     const sqlCase = sqlCases[challenge.id]
     if (!sqlCase) return { publicExamples: [], privateTests: [] }
-    const test = {
+    const toTest = (testCase) => ({
       input: {
-        setupSql: sqlCase.setupSql,
-        ...(sqlCase.verificationSql ? { verificationSql: sqlCase.verificationSql } : {}),
+        setupSql: testCase.setupSql,
+        ...(testCase.verificationSql ? { verificationSql: testCase.verificationSql } : {}),
       },
-      expected: sqlCase.expected,
-      validatorConfig: { sortRows: Boolean(sqlCase.sortRows) },
+      expected: testCase.expected,
+      validatorConfig: { sortRows: Boolean(testCase.sortRows) },
+    })
+    const publicTest = toTest(sqlCase)
+    const hiddenTests = (sqlHiddenCases[challenge.id] ?? []).map(toTest)
+    return {
+      publicExamples: [publicTest],
+      privateTests: hiddenTests.length > 0 ? hiddenTests : [publicTest],
     }
-    return { publicExamples: [test], privateTests: [test] }
   }
 
   const required = htmlRules[challenge.id] ?? []
-  const test = {
+  const forbidden = [
+    { description: 'scripts não são permitidos', anyOf: ['<script\\b', 'on[a-z]+\\s*=', 'javascript\\s*:'] },
+  ]
+  const publicTest = {
+    input: {},
+    expected: null,
+    validatorConfig: {
+      required: required.slice(0, Math.max(1, Math.ceil(required.length / 2)))
+        .map((pattern) => ({ description: 'estrutura obrigatória', anyOf: [pattern] })),
+      forbidden,
+    },
+  }
+  const privateTest = {
     input: {},
     expected: null,
     validatorConfig: {
       required: required.map((pattern) => ({ description: 'estrutura obrigatória', anyOf: [pattern] })),
-      forbidden: [
-        { description: 'scripts não são permitidos', anyOf: ['<script\\b', 'on[a-z]+\\s*=', 'javascript\\s*:'] },
-      ],
+      forbidden,
     },
   }
-  return { publicExamples: [test], privateTests: [test] }
+  return { publicExamples: [publicTest], privateTests: [privateTest] }
 }
 
 function validationType(challenge) {

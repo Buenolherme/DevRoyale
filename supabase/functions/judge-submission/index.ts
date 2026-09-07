@@ -1,15 +1,8 @@
-import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2.112.3'
-import { Judge0Provider } from './_shared/judge0.ts'
-import {
-  buildExecutionRequest,
-  compareExecution,
-  validateHtmlCss,
-} from './_shared/validators.ts'
+import { createClient } from 'npm:@supabase/supabase-js@2.112.3'
+import { processSubmission } from './_shared/process-submission.ts'
 import type {
-  JudgePayload,
   JudgeSubmissionRequest,
   StoredSubmission,
-  ValidationOutcome,
 } from './_shared/types.ts'
 
 declare const EdgeRuntime: { waitUntil(promise: Promise<unknown>): void }
@@ -52,106 +45,6 @@ function validRequest(value: unknown): value is JudgeSubmissionRequest {
     new TextEncoder().encode(request.sourceCode).byteLength <= MAX_SOURCE_BYTES &&
     (request.mode === 'run' || request.mode === 'submit')
   )
-}
-
-async function finalize(
-  admin: SupabaseClient,
-  submissionId: string,
-  outcome: ValidationOutcome,
-) {
-  const { error } = await admin.rpc('finalize_multiplayer_submission_internal', {
-    p_submission_id: submissionId,
-    p_status: outcome.status,
-    p_public_message: outcome.message,
-    p_stdout: outcome.stdout ?? null,
-    p_execution_time: outcome.executionTime ?? null,
-    p_memory_used: outcome.memoryUsed ?? null,
-  })
-  if (error) throw error
-}
-
-async function processSubmission(admin: SupabaseClient, submissionId: string) {
-  try {
-    const { data, error } = await admin.rpc('get_multiplayer_judge_payload_internal', {
-      p_submission_id: submissionId,
-    })
-    if (error) throw error
-    const payload = data as JudgePayload
-    if (!Array.isArray(payload.tests) || payload.tests.length === 0) {
-      throw new Error('judge_tests_missing')
-    }
-
-    if (payload.validationType === 'html_css_structure') {
-      await admin.rpc('mark_multiplayer_submission_running_internal', {
-        p_submission_id: submissionId,
-        p_provider: 'html-css-validator',
-        p_provider_token: null,
-      })
-      for (const test of payload.tests) {
-        const outcome = validateHtmlCss(payload.sourceCode, test.validatorConfig)
-        if (outcome.status !== 'accepted') {
-          await finalize(admin, submissionId, {
-            ...outcome,
-            message: payload.mode === 'submit' && outcome.status === 'wrong_answer'
-              ? 'Alguns testes ocultos ainda falharam.'
-              : outcome.message,
-          })
-          return
-        }
-      }
-      await finalize(admin, submissionId, {
-        status: 'accepted',
-        message: payload.mode === 'run' ? 'Estrutura pública validada.' : 'Solução aceita.',
-      })
-      return
-    }
-
-    const provider = new Judge0Provider()
-    let lastAccepted: ValidationOutcome = { status: 'accepted', message: 'Solução aceita.' }
-    for (const test of payload.tests) {
-      const providerToken = await provider.submit(buildExecutionRequest(payload, test))
-      await admin.rpc('mark_multiplayer_submission_running_internal', {
-        p_submission_id: submissionId,
-        p_provider: 'judge0',
-        p_provider_token: providerToken,
-      })
-      const execution = await provider.getResult(providerToken)
-      const outcome = compareExecution(
-        execution,
-        test,
-        payload.validationType,
-        payload.difficulty,
-      )
-      lastAccepted = outcome
-      if (outcome.status !== 'accepted') {
-        await finalize(admin, submissionId, {
-          ...outcome,
-          stdout: payload.mode === 'submit' ? undefined : outcome.stdout,
-          message: payload.mode === 'submit' && outcome.status === 'wrong_answer'
-            ? outcome.message.includes('muito perto')
-              ? outcome.message
-              : 'Alguns testes ocultos ainda falharam.'
-            : outcome.message,
-        })
-        return
-      }
-    }
-
-    await finalize(admin, submissionId, {
-      ...lastAccepted,
-      stdout: payload.mode === 'submit' ? undefined : lastAccepted.stdout,
-      message: payload.mode === 'run' ? 'Testes públicos concluídos.' : 'Solução aceita.',
-    })
-  } catch {
-    try {
-      await finalize(admin, submissionId, {
-        status: 'internal_error',
-        message: 'O avaliador da Arena está temporariamente indisponível. Tente novamente.',
-      })
-    } catch {
-      // A queued/running row remains recoverable if even the database is unavailable.
-    }
-  }
 }
 
 Deno.serve(async (request: Request) => {

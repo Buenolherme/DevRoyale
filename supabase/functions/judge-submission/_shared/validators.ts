@@ -194,6 +194,32 @@ export function compareExecution(
   }
 }
 
+const SUBMIT_MESSAGES: Record<ValidationOutcome['status'], string> = {
+  queued: 'Solução recebida para avaliação.',
+  running: 'Solução em avaliação.',
+  accepted: 'Solução aceita.',
+  wrong_answer: 'Alguns testes ocultos ainda falharam.',
+  compile_error: 'Não foi possível executar sua solução devido a um erro no código.',
+  runtime_error: 'Sua solução encontrou um erro durante os testes.',
+  time_limit: 'Sua solução excedeu o limite de tempo.',
+  validation_error: 'Sua solução não pôde ser validada.',
+  internal_error: 'O avaliador da Arena está temporariamente indisponível.',
+}
+
+export function sanitizeSubmissionOutcome(
+  outcome: ValidationOutcome,
+  mode: JudgePayload['mode'],
+): ValidationOutcome {
+  if (mode === 'run') return outcome
+
+  return {
+    status: outcome.status,
+    message: SUBMIT_MESSAGES[outcome.status],
+    executionTime: outcome.executionTime,
+    memoryUsed: outcome.memoryUsed,
+  }
+}
+
 function matchesAny(source: string, patterns: string[]): boolean {
   return patterns.some((pattern) => {
     try {
@@ -204,8 +230,43 @@ function matchesAny(source: string, patterns: string[]): boolean {
   })
 }
 
+function normalizeHtmlForSecurity(source: string): string {
+  return source
+    .replace(/&#x([0-9a-f]+);?/gi, (entity, code: string) => {
+      try {
+        return String.fromCodePoint(Number.parseInt(code, 16))
+      } catch {
+        return entity
+      }
+    })
+    .replace(/&#([0-9]+);?/g, (entity, code: string) => {
+      try {
+        return String.fromCodePoint(Number.parseInt(code, 10))
+      } catch {
+        return entity
+      }
+    })
+    .replace(/&colon;?/gi, ':')
+    .replace(/&(tab|newline);?/gi, '')
+}
+
+const HTML_SECURITY_RULES = [
+  {
+    description: 'conteúdo executável não é permitido',
+    anyOf: [
+      '<\\s*script\\b',
+      'on[a-z]+\\s*=',
+      'java\\s*script\\s*:',
+      'data\\s*:\\s*text/html',
+      '<\\s*(?:iframe|object|embed)\\b',
+    ],
+  },
+]
+
 export function validateHtmlCss(source: string, config: ValidatorConfig = {}): ValidationOutcome {
-  const forbidden = config.forbidden?.find((rule) => matchesAny(source, rule.anyOf))
+  const securitySource = normalizeHtmlForSecurity(source)
+  const forbidden = [...HTML_SECURITY_RULES, ...(config.forbidden ?? [])]
+    .find((rule) => matchesAny(securitySource, rule.anyOf))
   if (forbidden) {
     return {
       status: 'validation_error',

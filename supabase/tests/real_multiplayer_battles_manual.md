@@ -13,7 +13,11 @@ que nenhuma resposta inclui source do rival, hidden input/expected ou token do J
 3. Confirme administrativamente: uma match para a room, dois players, um round 1.
 4. Compare as duas telas: `match id`, `round id`, `challenge id`, enunciado e
    `started_at` devem ser idênticos.
-5. C tenta abrir a URL, chamar `get_multiplayer_match_state` e assinar
+5. Confirme no banco que a room saiu de `starting` para `in_match` com
+   `countdown_started_at is null`, sem violar `rooms_countdown_consistency`.
+6. Repita duas chamadas concorrentes de `activate_multiplayer_match`: deve existir
+   exatamente uma match, dois players e um round 1.
+7. C tenta abrir a URL, chamar `get_multiplayer_match_state` e assinar
    `match:<matchId>`; leitura e canal precisam ser rejeitados.
 
 ## Quick Match BO1 e hidden test
@@ -44,8 +48,43 @@ que nenhuma resposta inclui source do rival, hidden input/expected ou token do J
    aberto recebe `winner_id`; o placar sobe apenas uma vez e só um próximo round nasce.
 3. Abra duas abas da conta A e envie a mesma requisição HTTP com o mesmo
    `requestId`. Deve existir uma submission por `(match, user, requestId)`.
-4. Com requests diferentes, o rate limit deve continuar valendo; nenhuma combinação
+4. Envie simultaneamente dois `submit` com `requestId` diferentes. O lock estável
+   `user + match + round + mode` deve aceitar somente um dentro de dois segundos.
+5. Com requests diferentes, o rate limit deve continuar valendo; nenhuma combinação
    pode criar dois winners ou duplicar o placar.
+
+## Não vazamento de hidden tests
+
+1. Em um desafio de função, envie código que lance uma exceção contendo todos os
+   argumentos recebidos e também os escreva em stdout/stderr.
+2. No modo `submit`, confirme que resposta HTTP, `public_message`, Broadcast e RPC
+   de estado não contêm o argumento, stack, harness, stdout ou stderr secretos.
+3. Repita para `wrong_answer`, `compile_error`, `runtime_error` e `time_limit`; as
+   mensagens devem ser genéricas. No modo `run`, use apenas casos públicos e confirme
+   que o diagnóstico público continua útil.
+
+## Recuperação de queued/running
+
+1. Interrompa a função depois de gravar uma submission `queued`, antes de criar token.
+2. Após a lease/stale window, invoque `reconcile-judge-submissions` como serviço.
+   O claim deve usar `FOR UPDATE SKIP LOCKED`, reenviar uma vez e concluir a linha.
+3. Interrompa depois de persistir `provider_token` e `test_position`. O reconciliador
+   deve consultar o mesmo token e continuar do mesmo teste, sem novo Accepted/score.
+4. Dispare dois reconciliadores simultâneos. Somente um pode adquirir cada lease.
+5. Force três recuperações interrompidas. A próxima execução deve finalizar como
+   `internal_error`, sem vitória ou derrota automática.
+6. A função não é um scheduler: quando for implantada em ambiente de teste, configure
+   um disparo server-side periódico (por exemplo, uma vez por minuto) autenticado com
+   credencial de serviço. Nunca exponha essa credencial ao navegador.
+
+## Ordem RPC, Realtime e F5 no Lobby
+
+1. Atrase artificialmente a resposta HTTP de ativação e entregue primeiro a mudança
+   Realtime `room.status = in_match`; a navegação deve resolver a match oficial.
+2. Inverta a ordem: resposta RPC primeiro e Realtime depois. Deve ocorrer um único
+   `replace` para `/batalha/match/:matchId`, sem loop.
+3. Recarregue diretamente um Lobby cuja room já está `in_match`; `getCurrentMatch`
+   deve localizar a match e abrir a Arena.
 
 ## F5, draft, desconexão e desistência
 

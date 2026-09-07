@@ -10,6 +10,7 @@ import {
 import { subscribeRoom } from '@/lib/room-realtime-service'
 import {
   activateMatch,
+  getCurrentMatch,
   MultiplayerBattleServiceError,
 } from '@/lib/multiplayer-battle-service'
 import {
@@ -62,7 +63,9 @@ export function LobbyPage() {
   const [invitePanelOpen, setInvitePanelOpen] = useState(false)
   const [clockMs, setClockMs] = useState(() => Date.now())
   const [opponentLeft, setOpponentLeft] = useState(false)
-  const activationRoomRef = useRef<string | null>(null)
+  const navigatedMatchRef = useRef<string | null>(null)
+  const lobbyMountedRef = useRef(true)
+  const activeRoomIdRef = useRef<string | null>(null)
 
   const currentMember = room?.members.find((member) => member.userId === user?.id)
   const isQuickMatch = room?.roomKind === 'quick_match'
@@ -196,48 +199,64 @@ export function LobbyPage() {
     ? countdownRemaining
     : null
   const arenaReady = countdownRemaining !== null && countdownRemaining <= 0
+  const roomStatus = room?.status
 
   useEffect(() => {
-    if (!room || (room.status !== 'in_match' && !arenaReady)) return
-    if (activationRoomRef.current === room.id) return
+    lobbyMountedRef.current = true
+    return () => { lobbyMountedRef.current = false }
+  }, [])
 
-    let active = true
+  useEffect(() => {
+    activeRoomIdRef.current = roomId ?? null
+    navigatedMatchRef.current = null
+  }, [roomId])
+
+  useEffect(() => {
+    if (!roomId || (roomStatus !== 'in_match' && !arenaReady)) return
     let retryTimer: number | null = null
-    activationRoomRef.current = room.id
 
     const openArena = async () => {
       try {
-        const match = await activateMatch(room.id)
-        if (active) navigate(battleMatchPath(match.id), { replace: true })
+        const currentState = roomStatus === 'in_match' ? await getCurrentMatch() : null
+        const currentMatchId = currentState?.match.roomId === roomId
+          ? currentState.match.id
+          : null
+        const matchId = currentMatchId ?? (await activateMatch(roomId)).id
+        if (
+          !lobbyMountedRef.current ||
+          activeRoomIdRef.current !== roomId ||
+          navigatedMatchRef.current === matchId
+        ) return
+        navigatedMatchRef.current = matchId
+        navigate(battleMatchPath(matchId), { replace: true })
       } catch (activationError) {
         if (
-          active &&
+          !lobbyMountedRef.current ||
+          activeRoomIdRef.current !== roomId ||
+          navigatedMatchRef.current
+        ) return
+        if (
           activationError instanceof MultiplayerBattleServiceError &&
           activationError.code === 'NOT_ACTIVE'
         ) {
-          activationRoomRef.current = null
           retryTimer = window.setTimeout(openArena, 350)
           return
         }
 
-        activationRoomRef.current = null
-        if (active) {
-          setError(
-            activationError instanceof MultiplayerBattleServiceError
-              ? activationError.message
-              : 'Não foi possível abrir a Arena.',
-          )
-        }
+        setError(
+          activationError instanceof MultiplayerBattleServiceError
+            ? activationError.message
+            : 'Não foi possível abrir a Arena.',
+        )
       }
     }
 
     void openArena()
 
     return () => {
-      active = false
       if (retryTimer !== null) window.clearTimeout(retryTimer)
     }
-  }, [arenaReady, navigate, room])
+  }, [arenaReady, navigate, roomId, roomStatus])
 
   const runAction = async (key: string, action: () => Promise<unknown>) => {
     if (busyAction) return

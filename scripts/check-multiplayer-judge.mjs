@@ -25,7 +25,7 @@ const inactiveSlugs = catalog
 
 assert.equal(catalog.length, 56, 'O catálogo V1.5 deve continuar com 56 entradas')
 assert.equal(activeCatalog.length, 52, 'A porta multiplayer deve manter 52 desafios ativos')
-assert.equal(privateTests.length, 84, 'A migration deve conter 84 casos privados')
+assert.equal(privateTests.length, 66, 'A migration deve conter 66 casos privados sem duplicatas desnecessárias')
 assert.equal(publicJudgeTests.length, 52, 'Cada desafio ativo deve ter um caso público server-side')
 assert.deepEqual(inactiveSlugs, [
   'battle-v1-javascript-advanced-3',
@@ -54,6 +54,43 @@ for (const challenge of catalog) {
   )
 }
 
+function testFingerprint(test) {
+  return JSON.stringify({
+    input: test.input,
+    expected: test.expected,
+    validator_config: test.validator_config,
+  })
+}
+
+const challengesWithoutDistinctHiddenCase = activeCatalog
+  .filter((challenge) => {
+    const publicFingerprints = publicJudgeTests
+      .filter((test) => test.slug === challenge.slug)
+      .map(testFingerprint)
+    return privateTests
+      .filter((test) => test.slug === challenge.slug)
+      .every((test) => publicFingerprints.includes(testFingerprint(test)))
+  })
+  .map((challenge) => challenge.slug)
+  .sort()
+
+assert.deepEqual(challengesWithoutDistinctHiddenCase, [
+  'battle-v1-html-css-never-2',
+  'battle-v1-javascript-never-1',
+  'battle-v1-javascript-never-2',
+  'battle-v1-python-never-1',
+  'battle-v1-python-never-2',
+  'html-css-never-hello',
+  'javascript-never-hello',
+  'python-never-hello',
+  'sql-never-hello',
+])
+
+assert.match(migration, /set status = 'in_match', countdown_started_at = null/)
+assert.match(migration, /battle-rate:/)
+assert.match(migration, /claim_stale_multiplayer_submission_internal/)
+assert.match(migration, /for update of submissions skip locked/)
+
 const validatorSource = fs.readFileSync(
   new URL('../supabase/functions/judge-submission/_shared/validators.ts', import.meta.url),
   'utf8',
@@ -77,6 +114,16 @@ assert.equal(
     required: [{ description: 'arena', anyOf: ['<main[^>]*class="arena"'] }],
   }).status,
   'accepted',
+)
+assert.equal(
+  validators.validateHtmlCss('<a href="java&#x73;cript&#58;alert(1)">x</a>').status,
+  'validation_error',
+  'Entidades HTML não podem contornar a proibição de javascript:',
+)
+assert.equal(
+  validators.validateHtmlCss('<svg onload = "alert(1)"></svg>').status,
+  'validation_error',
+  'Event handlers não podem contornar o validator',
 )
 
 const basePayload = {
@@ -136,4 +183,16 @@ const nearMiss = validators.compareExecution({
 assert.equal(nearMiss.status, 'wrong_answer')
 assert.match(nearMiss.message, /muito perto/i)
 
-console.log('Multiplayer judge checks: 56 catalog, 52 active, 84 hidden tests, validators OK.')
+const secretInput = 'HIDDEN-ARGUMENT-DO-NOT-LEAK'
+const hiddenRuntimeError = validators.sanitizeSubmissionOutcome({
+  status: 'runtime_error',
+  message: `Error: ${secretInput}`,
+  stdout: secretInput,
+  executionTime: 0.01,
+  memoryUsed: 1024,
+}, 'submit')
+assert.doesNotMatch(JSON.stringify(hiddenRuntimeError), new RegExp(secretInput))
+assert.equal(hiddenRuntimeError.message, 'Sua solução encontrou um erro durante os testes.')
+assert.equal(hiddenRuntimeError.stdout, undefined)
+
+console.log('Multiplayer judge checks: 56 catalog, 52 active, 66 private tests, 43 challenges with distinct hidden cases, sanitizer and recovery invariants OK.')

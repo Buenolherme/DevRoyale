@@ -73,6 +73,29 @@ select public.create_multiplayer_submission_internal(
 );
 rollback;
 
+-- Leases/reconciliação são service-role-only. Todos os blocos são EXPECTED ERROR.
+begin;
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'UUID_A', true);
+select public.acquire_multiplayer_submission_lease_internal(
+  'SUBMISSION_ID'::uuid, gen_random_uuid(), 90
+);
+rollback;
+
+begin;
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'UUID_A', true);
+select public.claim_stale_multiplayer_submission_internal(gen_random_uuid(), 30, 90);
+rollback;
+
+begin;
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'UUID_A', true);
+select public.record_multiplayer_submission_job_error_internal(
+  'SUBMISSION_ID'::uuid, gen_random_uuid(), 'spoof'
+);
+rollback;
+
 -- Hidden tests, expected e jobs externos são privados. EXPECTED ERROR.
 begin;
 set local role authenticated;
