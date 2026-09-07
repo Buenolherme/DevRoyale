@@ -91,6 +91,74 @@ assert.match(migration, /battle-rate:/)
 assert.match(migration, /claim_stale_multiplayer_submission_internal/)
 assert.match(migration, /for update of submissions skip locked/)
 
+const judge0Source = fs.readFileSync(
+  new URL('../supabase/functions/judge-submission/_shared/judge0.ts', import.meta.url),
+  'utf8',
+)
+const judge0JavaScript = ts.transpileModule(judge0Source, {
+  compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
+}).outputText
+const { Judge0Provider } = await import(
+  `data:text/javascript;base64,${Buffer.from(judge0JavaScript).toString('base64')}`
+)
+
+function createJudge0Provider(env) {
+  globalThis.Deno = { env: { get: (name) => env[name] } }
+  return new Judge0Provider()
+}
+
+const nativeJudge = createJudge0Provider({
+  JUDGE0_AUTH_MODE: 'judge0',
+  JUDGE0_BASE_URL: 'https://judge0.internal/',
+  JUDGE0_AUTH_TOKEN: 'native-placeholder',
+})
+assert.deepEqual(nativeJudge.headers(), {
+  'Content-Type': 'application/json',
+  'X-Auth-Token': 'native-placeholder',
+})
+assert.equal(nativeJudge.baseUrl, 'https://judge0.internal')
+
+const legacyJudge = createJudge0Provider({
+  JUDGE0_BASE_URL: 'https://judge0.internal',
+  JUDGE0_AUTH_TOKEN: 'legacy-placeholder',
+})
+assert.equal(legacyJudge.headers()['X-Auth-Token'], 'legacy-placeholder')
+
+const rapidApiJudge = createJudge0Provider({
+  JUDGE0_AUTH_MODE: 'rapidapi',
+  JUDGE0_BASE_URL: 'https://judge0-ce.p.rapidapi.com',
+  JUDGE0_RAPIDAPI_KEY: 'rapidapi-placeholder',
+  JUDGE0_RAPIDAPI_HOST: 'judge0-ce.p.rapidapi.com',
+})
+assert.deepEqual(rapidApiJudge.headers(), {
+  'Content-Type': 'application/json',
+  'X-RapidAPI-Key': 'rapidapi-placeholder',
+  'X-RapidAPI-Host': 'judge0-ce.p.rapidapi.com',
+})
+assert.throws(() => createJudge0Provider({
+  JUDGE0_AUTH_MODE: 'rapidapi',
+  JUDGE0_BASE_URL: 'https://judge0-ce.p.rapidapi.com',
+}), /judge_not_configured/)
+assert.throws(() => createJudge0Provider({
+  JUDGE0_AUTH_MODE: 'unsupported',
+  JUDGE0_BASE_URL: 'https://judge0.invalid',
+}), /judge_auth_mode_invalid/)
+
+const edgeEnvExample = fs.readFileSync(
+  new URL('../supabase/functions/.env.example', import.meta.url),
+  'utf8',
+)
+for (const variable of [
+  'JUDGE0_AUTH_MODE',
+  'JUDGE0_BASE_URL',
+  'JUDGE0_AUTH_TOKEN',
+  'JUDGE0_RAPIDAPI_KEY',
+  'JUDGE0_RAPIDAPI_HOST',
+]) {
+  assert.match(edgeEnvExample, new RegExp(`^${variable}=$`, 'm'), `${variable} deve ser placeholder vazio`)
+}
+assert.doesNotMatch(edgeEnvExample, /^VITE_.*JUDGE0|^JUDGE0_.*=.+$/m)
+
 const validatorSource = fs.readFileSync(
   new URL('../supabase/functions/judge-submission/_shared/validators.ts', import.meta.url),
   'utf8',
@@ -195,4 +263,4 @@ assert.doesNotMatch(JSON.stringify(hiddenRuntimeError), new RegExp(secretInput))
 assert.equal(hiddenRuntimeError.message, 'Sua solução encontrou um erro durante os testes.')
 assert.equal(hiddenRuntimeError.stdout, undefined)
 
-console.log('Multiplayer judge checks: 56 catalog, 52 active, 66 private tests, 43 challenges with distinct hidden cases, sanitizer and recovery invariants OK.')
+console.log('Multiplayer judge checks: auth modes, 56 catalog, 52 active, 66 private tests, 43 challenges with distinct hidden cases, sanitizer and recovery invariants OK.')

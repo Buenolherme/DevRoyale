@@ -5,6 +5,25 @@ a Edge Function servida e um Judge0 sandboxado configurado. Não o execute em
 produção. Use três contas A, B e C e mantenha o DevTools aberto para confirmar
 que nenhuma resposta inclui source do rival, hidden input/expected ou token do Judge0.
 
+## Configuração server-side do Judge0
+
+Configure somente o ambiente das Edge Functions. Nunca exponha estas variáveis no
+frontend e não crie equivalentes com prefixo `VITE_`.
+
+- Judge0 nativo/self-hosted: `JUDGE0_AUTH_MODE=judge0`, `JUDGE0_BASE_URL` e
+  `JUDGE0_AUTH_TOKEN`. O token é enviado no header `X-Auth-Token`. Por
+  compatibilidade com instalações existentes, omitir `JUDGE0_AUTH_MODE` também
+  seleciona este modo.
+- RapidAPI: `JUDGE0_AUTH_MODE=rapidapi`,
+  `JUDGE0_BASE_URL=https://judge0-ce.p.rapidapi.com`, `JUDGE0_RAPIDAPI_KEY` e
+  `JUDGE0_RAPIDAPI_HOST=judge0-ce.p.rapidapi.com`. A chave e o host são enviados
+  nos headers `X-RapidAPI-Key` e `X-RapidAPI-Host`.
+- Opcionais nos dois modos: `JUDGE0_PYTHON_LANGUAGE_ID` e
+  `JUDGE0_JAVASCRIPT_LANGUAGE_ID` para sobrescrever os IDs padrão.
+
+O arquivo `supabase/functions/.env.example` contém apenas placeholders vazios.
+Preencha valores reais somente no gerenciador de secrets do ambiente de execução.
+
 ## Ativação concorrente e mesmo desafio
 
 1. A e B entram na mesma quick room, ficam prontos e aguardam o countdown oficial.

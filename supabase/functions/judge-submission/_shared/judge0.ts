@@ -44,16 +44,32 @@ function sleep(milliseconds: number) {
 
 export class Judge0Provider implements CodeJudgeProvider {
   private readonly baseUrl: string
-  private readonly authToken: string
+  private readonly authHeaders: Record<string, string>
   private readonly languageIds: Record<JudgeExecutionRequest['language'], number>
 
   constructor() {
-    const baseUrl = Deno.env.get('JUDGE0_BASE_URL')?.replace(/\/$/, '')
-    const authToken = Deno.env.get('JUDGE0_AUTH_TOKEN')
-    if (!baseUrl || !authToken) throw new Error('judge_not_configured')
+    const baseUrl = Deno.env.get('JUDGE0_BASE_URL')?.trim().replace(/\/+$/, '')
+    const authMode = Deno.env.get('JUDGE0_AUTH_MODE')?.trim().toLowerCase() || 'judge0'
+    if (!baseUrl) throw new Error('judge_not_configured')
 
     this.baseUrl = baseUrl
-    this.authToken = authToken
+
+    if (authMode === 'judge0') {
+      const authToken = Deno.env.get('JUDGE0_AUTH_TOKEN')?.trim()
+      if (!authToken) throw new Error('judge_not_configured')
+      this.authHeaders = { 'X-Auth-Token': authToken }
+    } else if (authMode === 'rapidapi') {
+      const apiKey = Deno.env.get('JUDGE0_RAPIDAPI_KEY')?.trim()
+      const apiHost = Deno.env.get('JUDGE0_RAPIDAPI_HOST')?.trim()
+      if (!apiKey || !apiHost) throw new Error('judge_not_configured')
+      this.authHeaders = {
+        'X-RapidAPI-Key': apiKey,
+        'X-RapidAPI-Host': apiHost,
+      }
+    } else {
+      throw new Error('judge_auth_mode_invalid')
+    }
+
     this.languageIds = {
       python: Number(Deno.env.get('JUDGE0_PYTHON_LANGUAGE_ID')) || DEFAULT_LANGUAGE_IDS.python,
       javascript: Number(Deno.env.get('JUDGE0_JAVASCRIPT_LANGUAGE_ID')) || DEFAULT_LANGUAGE_IDS.javascript,
@@ -63,7 +79,7 @@ export class Judge0Provider implements CodeJudgeProvider {
   private headers() {
     return {
       'Content-Type': 'application/json',
-      'X-Auth-Token': this.authToken,
+      ...this.authHeaders,
     }
   }
 
@@ -145,4 +161,3 @@ export class Judge0Provider implements CodeJudgeProvider {
     }
   }
 }
-
