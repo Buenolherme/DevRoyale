@@ -32,6 +32,10 @@
   --surface-code-elevated: #18181d;
   --surface-code-footer: #0f0f12;
   --color-accent-text: #77501b;
+  --color-success-text: #137438;
+  --color-danger-text: #a72525;
+  --color-primary-text: #a72525;
+  --color-warning-text: #77501b;
   --color-on-brand: #ffffff;
   --color-on-gold: #21170a;
   --color-text-on-code: #f5f5f5;
@@ -90,6 +94,10 @@
   --surface-code-elevated: #18181d;
   --surface-code-footer: #0f0f12;
   --color-accent-text: var(--color-secondary-light);
+  --color-success-text: #4ade80;
+  --color-danger-text: #ff8585;
+  --color-primary-text: #ff8585;
+  --color-warning-text: #f3d27a;
   --color-on-brand: #ffffff;
   --color-on-gold: #21170a;
   --color-text-on-code: #f5f5f5;

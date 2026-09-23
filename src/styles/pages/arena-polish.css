@@ -1,0 +1,129 @@
+.arena-status-banner {
+  margin-bottom: 1rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 1rem;
+  background: var(--color-bg-elevated);
+  padding: 1rem 1.15rem;
+  color: var(--color-text);
+  overflow-wrap: anywhere;
+}
+
+.arena-status-banner strong {
+  font-size: 0.9rem;
+  font-weight: 850;
+}
+
+.arena-status-banner p {
+  margin-top: 0.35rem;
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+  line-height: 1.6;
+}
+
+.arena-status-banner--warning {
+  border-left: 3px solid var(--color-warning);
+  background: color-mix(in srgb, var(--color-warning) 7%, var(--color-bg-elevated));
+}
+
+.arena-status-banner--result {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.multiplayer-arena-page .multiplayer-arena-loading {
+  padding: clamp(1.2rem, 4vw, 2.5rem);
+}
+
+.multiplayer-arena-page .multiplayer-arena-sidebar,
+.multiplayer-arena-page .multiplayer-opponent-status,
+.multiplayer-arena-page .multiplayer-public-examples,
+.multiplayer-arena-page .multiplayer-console,
+.multiplayer-arena-page .multiplayer-arena-workspace > * {
+  min-width: 0;
+}
+
+.multiplayer-arena-page .multiplayer-opponent-status strong,
+.multiplayer-arena-page .multiplayer-console strong,
+.multiplayer-arena-page .multiplayer-result-overlay dd,
+.multiplayer-arena-page .battle-challenge-card__title,
+.multiplayer-arena-page .battle-challenge-card__description {
+  overflow-wrap: anywhere;
+}
+
+.multiplayer-arena-page .multiplayer-opponent-status > span,
+.multiplayer-arena-page .multiplayer-arena-connection > span {
+  flex-shrink: 0;
+}
+
+.multiplayer-arena-page .multiplayer-public-examples pre,
+.multiplayer-arena-page .multiplayer-console pre {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.multiplayer-arena-page .multiplayer-result-overlay {
+  overscroll-behavior: contain;
+}
+
+.multiplayer-arena-page .multiplayer-result-overlay h2 {
+  font-size: clamp(2.1rem, 9vw, 4.8rem);
+  overflow-wrap: anywhere;
+}
+
+.multiplayer-arena-page .multiplayer-result-overlay--neutral > section {
+  border-color: var(--color-border-strong);
+  background: var(--color-bg-elevated);
+  box-shadow: var(--shadow-card);
+}
+
+.multiplayer-arena-page .multiplayer-result-overlay dl div {
+  text-align: left;
+}
+
+.multiplayer-arena-page .multiplayer-result-overlay dd {
+  min-width: 0;
+  text-align: right;
+}
+
+.arena-result-review {
+  margin-top: 0.8rem;
+}
+
+.multiplayer-arena-page :is(button, summary, [tabindex]):focus-visible {
+  outline: 3px solid var(--color-secondary);
+  outline-offset: 4px;
+}
+
+@media (max-width: 639px) {
+  .arena-status-banner--result {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .multiplayer-arena-page .multiplayer-console > div {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .multiplayer-arena-page .multiplayer-intermission-score {
+    flex-wrap: wrap;
+    justify-content: center;
+    overflow-wrap: anywhere;
+  }
+
+  .multiplayer-arena-page .multiplayer-result-actions {
+    flex-direction: column;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .multiplayer-arena-page *,
+  .multiplayer-arena-page *::before,
+  .multiplayer-arena-page *::after {
+    animation: none !important;
+    scroll-behavior: auto !important;
+  }
+}

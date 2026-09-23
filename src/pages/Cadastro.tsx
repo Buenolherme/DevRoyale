@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Logo } from '@/components/layout'
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Select } from '@/components/ui'
+import { Button, Card, CardContent, CardDescription, CardHeader, Input, Select } from '@/components/ui'
 import { AuthServiceError } from '@/lib/auth-service'
 import {
   PROFILE_DISPLAY_NAME_MAX_LENGTH,
@@ -103,7 +103,7 @@ export function CadastroPage() {
         </div>
         <Card variant="premium">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl">Entrar na Batalha</CardTitle>
+            <h1 className="text-2xl font-bold text-foreground">Criar sua conta</h1>
             <CardDescription>Crie sua conta e junte-se à arena DevRoyale</CardDescription>
           </CardHeader>
           <CardContent>

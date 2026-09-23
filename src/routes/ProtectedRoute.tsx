@@ -1,6 +1,7 @@
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { ROUTES } from './paths'
+import { PageState } from '@/components/ui'
 
 import type { ReactNode } from 'react'
 
@@ -14,8 +15,8 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   if (isLoading) {
     return (
-      <div className="page-container flex min-h-[40vh] items-center justify-center">
-        <p className="text-muted">Carregando...</p>
+      <div className="page-container route-loading">
+        <PageState loading title="Restaurando sua sessão..." description="Estamos preparando sua conta e seu perfil." />
       </div>
     )
   }

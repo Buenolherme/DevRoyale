@@ -14,7 +14,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui'
-import { useAuth, useBattleIntegrity } from '@/hooks'
+import { useAuth, useBattleIntegrity, useDialogFocus } from '@/hooks'
 import {
   MultiplayerBattleServiceError,
   advanceRound,
@@ -35,6 +35,7 @@ import {
   type MultiplayerMatchState,
   type MultiplayerSubmissionStatus,
 } from '@/types'
+import '@/styles/pages/arena-polish.css'
 
 const maxRoundsByFormat = { bo1: 1, bo3: 3, bo5: 5 } as const
 
@@ -48,6 +49,18 @@ const submissionLabels: Record<MultiplayerSubmissionStatus, string> = {
   time_limit: 'A solução excedeu o limite de tempo.',
   validation_error: 'A estrutura enviada ainda não atende ao desafio.',
   internal_error: 'O avaliador da Arena está temporariamente indisponível. Tente novamente.',
+}
+
+const submissionBadges: Record<MultiplayerSubmissionStatus, string> = {
+  queued: 'Na fila',
+  running: 'Avaliando',
+  accepted: 'Aceita',
+  wrong_answer: 'Testes pendentes',
+  compile_error: 'Erro de compilação',
+  runtime_error: 'Erro de execução',
+  time_limit: 'Tempo excedido',
+  validation_error: 'Revise a estrutura',
+  internal_error: 'Judge indisponível',
 }
 
 function draftKey(matchId: string, roundId: string, userId: string) {
@@ -80,7 +93,9 @@ function removeDraft(key: string) {
 
 function formatDuration(startedAt: string, finishedAt: string | null, nowMs: number) {
   const end = finishedAt ? new Date(finishedAt).getTime() : nowMs
-  const seconds = Math.max(0, Math.floor((end - new Date(startedAt).getTime()) / 1000))
+  const duration = end - new Date(startedAt).getTime()
+  if (!Number.isFinite(duration)) return '—'
+  const seconds = Math.max(0, Math.floor(duration / 1000))
   const minutes = Math.floor(seconds / 60)
   return `${String(minutes).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`
 }
@@ -95,14 +110,18 @@ function safeErrorMessage(error: unknown) {
     : 'Não foi possível atualizar a Arena. Tentaremos novamente.'
 }
 
-export function MultiplayerArenaPage() {
+function MultiplayerArenaContent() {
   const { matchId } = useParams()
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, isLoading: authLoading } = useAuth()
+  const userId = user?.id
   const [battle, setBattle] = useState<MultiplayerMatchState | null>(null)
   const [code, setCode] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [judgeUnavailable, setJudgeUnavailable] = useState(false)
+  const [surrenderOpen, setSurrenderOpen] = useState(false)
+  const [dismissedResultId, setDismissedResultId] = useState<string | null>(null)
   const [action, setAction] = useState<'run' | 'submit' | 'surrender' | null>(null)
   const [realtimeConnected, setRealtimeConnected] = useState(false)
   const [connectedUserIds, setConnectedUserIds] = useState<Set<string>>(new Set())
@@ -110,14 +129,23 @@ export function MultiplayerArenaPage() {
   const [clockMs, setClockMs] = useState(() => Date.now())
   const advancingRoundRef = useRef<string | null>(null)
   const activeDraftKeyRef = useRef<string | null>(null)
+  const lifecycleRef = useRef(0)
+  const reloadRef = useRef<{ scope: number; promise: Promise<MultiplayerMatchState | null> } | null>(null)
+  const actionRef = useRef(false)
+  const resultDialogRef = useRef<HTMLElement>(null)
+  const surrenderDialogRef = useRef<HTMLElement>(null)
 
-  const reloadMatch = useCallback(async (showLoading = false) => {
-    if (!user) return null
+  const reloadMatch = useCallback((showLoading = false): Promise<MultiplayerMatchState | null> => {
+    if (!userId) return Promise.resolve(null)
+    const scope = lifecycleRef.current
+    if (reloadRef.current?.scope === scope) return reloadRef.current.promise
     if (showLoading) setLoading(true)
 
-    try {
+    const request = (async () => {
+      try {
       let nextBattle = matchId ? await getMatch(matchId) : null
       if (!nextBattle) nextBattle = await getCurrentMatch()
+      if (scope !== lifecycleRef.current) return null
 
       if (!nextBattle) {
         setBattle(null)
@@ -129,7 +157,7 @@ export function MultiplayerArenaPage() {
         navigate(`/batalha/match/${encodeURIComponent(nextBattle.match.id)}`, { replace: true })
       }
 
-      const nextDraftKey = draftKey(nextBattle.match.id, nextBattle.round.id, user.id)
+      const nextDraftKey = draftKey(nextBattle.match.id, nextBattle.round.id, userId)
       const previousDraftKey = activeDraftKeyRef.current
       if (previousDraftKey && previousDraftKey !== nextDraftKey) {
         removeDraft(previousDraftKey)
@@ -146,16 +174,25 @@ export function MultiplayerArenaPage() {
       setError('')
       return nextBattle
     } catch (loadError) {
-      setError(safeErrorMessage(loadError))
+      if (scope === lifecycleRef.current) setError(safeErrorMessage(loadError))
       return null
     } finally {
-      if (showLoading) setLoading(false)
+      if (scope === lifecycleRef.current && showLoading) setLoading(false)
     }
-  }, [matchId, navigate, user])
+    })()
+    reloadRef.current = { scope, promise: request }
+    void request.finally(() => {
+      if (reloadRef.current?.promise === request) reloadRef.current = null
+    })
+    return request
+  }, [matchId, navigate, userId])
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => void reloadMatch(true), 0)
-    return () => window.clearTimeout(timeoutId)
+    return () => {
+      window.clearTimeout(timeoutId)
+      lifecycleRef.current += 1
+    }
   }, [reloadMatch])
 
   const currentDraftScope = battle ? `${battle.match.id}:${battle.round.id}` : null
@@ -178,27 +215,32 @@ export function MultiplayerArenaPage() {
   }, [currentDraftScope])
 
   const handleRealtimeEvent = useCallback((event: MultiplayerBattleRealtimeEvent) => {
-    if (event.userId && event.userId !== user?.id) {
+    if (event.userId && event.userId !== userId) {
       if (event.type === 'player_submitted') setOpponentActivity('Enviou solução')
       if (event.type === 'submission_finished') {
-        setOpponentActivity(event.status === 'accepted' ? 'Round concluído' : 'Codando...')
+        setOpponentActivity('Avaliação concluída')
       }
     }
     if (event.type === 'round_finished') setOpponentActivity('Round concluído')
     if (event.type === 'round_started') setOpponentActivity('Codando...')
     void reloadMatch()
-  }, [reloadMatch, user?.id])
+  }, [reloadMatch, userId])
 
   const activeMatchId = battle?.match.id
 
   useEffect(() => {
-    if (!activeMatchId || !user) return
-    return subscribeToMultiplayerBattle(activeMatchId, user.id, {
-      onEvent: handleRealtimeEvent,
-      onPresenceChange: setConnectedUserIds,
-      onConnectionChange: setRealtimeConnected,
+    if (!activeMatchId || !userId) return
+    let active = true
+    const unsubscribe = subscribeToMultiplayerBattle(activeMatchId, userId, {
+      onEvent: (event) => { if (active) handleRealtimeEvent(event) },
+      onPresenceChange: (ids) => { if (active) setConnectedUserIds(ids) },
+      onConnectionChange: (connected) => { if (active) setRealtimeConnected(connected) },
     })
-  }, [activeMatchId, handleRealtimeEvent, user])
+    return () => {
+      active = false
+      unsubscribe()
+    }
+  }, [activeMatchId, handleRealtimeEvent, userId])
 
   const activeMatchStatus = battle?.match.status
   const latestSubmissionStatus = battle?.ownLatestSubmission?.status
@@ -218,7 +260,7 @@ export function MultiplayerArenaPage() {
     if (activeMatchStatus !== 'active' && activeMatchStatus !== 'between_rounds') return
     const intervalId = window.setInterval(
       () => setClockMs(Date.now()),
-      activeMatchStatus === 'between_rounds' ? 100 : 1_000,
+      1_000,
     )
     return () => window.clearInterval(intervalId)
   }, [activeMatchStatus, activeRoundId])
@@ -228,31 +270,38 @@ export function MultiplayerArenaPage() {
     : null
 
   useEffect(() => {
-    if (!battle || battle.match.status !== 'between_rounds' || roundCountdown !== 0) return
-    if (advancingRoundRef.current === battle.round.id) return
-    advancingRoundRef.current = battle.round.id
-
-    void advanceRound(battle.match.id)
-      .catch((advanceError: unknown) => {
-        if (!(advanceError instanceof MultiplayerBattleServiceError) || advanceError.code !== 'NOT_ACTIVE') {
-          setError(safeErrorMessage(advanceError))
-        }
-      })
-      .finally(() => {
+    if (!activeMatchId || !activeRoundId || activeMatchStatus !== 'between_rounds' || roundCountdown !== 0) return
+    let active = true
+    const advance = async () => {
+      if (advancingRoundRef.current === activeRoundId) return
+      advancingRoundRef.current = activeRoundId
+      try { await advanceRound(activeMatchId) }
+      catch (advanceError) {
+        if (active && (!(advanceError instanceof MultiplayerBattleServiceError) || advanceError.code !== 'NOT_ACTIVE')) setError(safeErrorMessage(advanceError))
+      } finally {
         advancingRoundRef.current = null
-        void reloadMatch()
-      })
-  }, [battle, reloadMatch, roundCountdown])
+        if (active) void reloadMatch()
+      }
+    }
+    void advance()
+    const retryId = window.setInterval(() => void advance(), 3_000)
+    return () => { active = false; window.clearInterval(retryId) }
+  }, [activeMatchId, activeMatchStatus, activeRoundId, reloadMatch, roundCountdown])
 
   const me = battle?.players.find((player) => player.userId === user?.id)
   const opponent = battle?.players.find((player) => player.userId !== user?.id)
   const opponentConnected = opponent ? connectedUserIds.has(opponent.userId) : false
   const matchFinished = battle?.match.status === 'finished'
+  const matchEnded = Boolean(battle && ['finished', 'cancelled', 'abandoned'].includes(battle.match.status))
+  const resultOpen = matchEnded && dismissedResultId !== battle?.match.id
   const roundActive = battle?.match.status === 'active' && battle.round.status === 'active'
   const ownSubmission = battle?.ownLatestSubmission
   const evaluating = Boolean(ownSubmission && ['queued', 'running'].includes(ownSubmission.status))
   const maxRounds = battle ? maxRoundsByFormat[battle.match.matchFormat] : 1
   const matchWon = Boolean(matchFinished && battle?.match.winnerId === user?.id)
+  const matchLost = Boolean(matchFinished && battle?.match.winnerId === opponent?.userId)
+  const resultTitle = matchWon ? 'Vitória' : matchLost ? 'Derrota'
+    : battle?.match.status === 'cancelled' ? 'Partida cancelada' : 'Partida encerrada'
   const previousRoundWinner = battle?.players.find(
     (player) => player.userId === battle.previousRound?.winnerId,
   )
@@ -263,6 +312,17 @@ export function MultiplayerArenaPage() {
       : ownSubmission
         ? 'error'
         : 'idle'
+
+  useDialogFocus({
+    open: resultOpen,
+    containerRef: resultDialogRef,
+    onClose: () => setDismissedResultId(battle?.match.id ?? null),
+  })
+  useDialogFocus({
+    open: surrenderOpen && !matchEnded,
+    containerRef: surrenderDialogRef,
+    onClose: () => { if (!actionRef.current) setSurrenderOpen(false) },
+  })
 
   const {
     warningCount,
@@ -282,52 +342,76 @@ export function MultiplayerArenaPage() {
 
   const ownStatus = me?.status === 'surrendered'
     ? 'Desistiu'
+    : matchEnded ? 'Partida encerrada'
+    : evaluating || action === 'run' || action === 'submit' ? 'Avaliando solução'
     : roundActive
       ? 'Codando'
       : 'Aguardando'
-  const displayedOpponentStatus = !opponentConnected && !matchFinished
-    ? 'Reconectando...'
+  const displayedOpponentStatus = opponent?.status === 'surrendered' ? 'Adversário saiu · desistência'
+    : matchEnded ? 'Partida encerrada'
+    : opponent?.status === 'disconnected' ? 'Reconectando...'
+    : !realtimeConnected ? 'Sincronizando presença...'
+    : !opponentConnected ? 'Aguardando conexão...'
     : opponentActivity
 
   const resultMessage = ownSubmission
-    ? ownSubmission.message || submissionLabels[ownSubmission.status]
+    ? ownSubmission.status === 'accepted' && ownSubmission.mode === 'run'
+      ? 'Exemplos públicos concluídos. Envie sua solução para disputar o round.'
+      : submissionLabels[ownSubmission.status]
     : null
+  const judgeIsUnavailable = judgeUnavailable || ownSubmission?.status === 'internal_error'
   const publicExamples = useMemo(
     () => battle?.challenge.publicExamples ?? [],
     [battle?.challenge.publicExamples],
   )
 
   const sendSubmission = async (mode: 'run' | 'submit') => {
-    if (!battle || !roundActive || action || evaluating) return
+    if (!battle || !roundActive || actionRef.current || evaluating) return
     if (!code.trim()) {
       setError('Digite sua solução antes de enviar.')
       return
     }
 
+    const scope = lifecycleRef.current
+    actionRef.current = true
     setAction(mode)
+    setJudgeUnavailable(false)
     setError('')
     try {
       if (mode === 'run') await runCode(battle, code)
       else await submitCode(battle, code)
-      await reloadMatch()
+      if (scope === lifecycleRef.current) await reloadMatch()
     } catch (submissionError) {
-      setError(safeErrorMessage(submissionError))
+      if (scope === lifecycleRef.current) {
+        setError(safeErrorMessage(submissionError))
+        setJudgeUnavailable(submissionError instanceof MultiplayerBattleServiceError && submissionError.code === 'JUDGE_UNAVAILABLE')
+      }
     } finally {
-      setAction(null)
+      actionRef.current = false
+      if (scope === lifecycleRef.current) setAction(null)
     }
   }
 
   const handleSurrender = async () => {
-    if (!battle || !window.confirm('Desistir desta batalha? O adversário vencerá a partida.')) return
+    if (!battle || matchEnded || actionRef.current) return
+    const scope = lifecycleRef.current
+    actionRef.current = true
     setAction('surrender')
     setError('')
     try {
       await surrender(battle.match.id)
-      await reloadMatch()
+      if (scope === lifecycleRef.current) {
+        setSurrenderOpen(false)
+        await reloadMatch()
+      }
     } catch (surrenderError) {
-      setError(safeErrorMessage(surrenderError))
+      if (scope === lifecycleRef.current) {
+        setSurrenderOpen(false)
+        setError(safeErrorMessage(surrenderError))
+      }
     } finally {
-      setAction(null)
+      actionRef.current = false
+      if (scope === lifecycleRef.current) setAction(null)
     }
   }
 
@@ -358,13 +442,14 @@ export function MultiplayerArenaPage() {
     reportChallengeCopyAttempt()
   }
 
-  if (loading) {
+  if (authLoading || (loading && user)) {
     return (
       <div className="page-container multiplayer-arena-page">
-        <Card variant="premium" className="multiplayer-arena-loading">
+        <Card variant="premium" className="multiplayer-arena-loading" role="status" aria-live="polite" aria-busy="true">
           <span className="multiplayer-arena-spinner" aria-hidden="true" />
           <CardTitle>Preparando Arena...</CardTitle>
-          <CardDescription>Sincronizando partida, round e desafio oficial.</CardDescription>
+          <CardDescription>Carregando desafio e sincronizando o placar oficial.</CardDescription>
+          <p className="multiplayer-privacy-note">Seu rascunho salvo neste navegador será recuperado.</p>
         </Card>
       </div>
     )
@@ -376,7 +461,8 @@ export function MultiplayerArenaPage() {
         <Card variant="premium" className="multiplayer-arena-loading">
           <Badge variant="danger">Arena indisponível</Badge>
           <CardTitle>Batalha não encontrada</CardTitle>
-          <CardDescription>{error || 'A partida terminou ou você não faz parte dela.'}</CardDescription>
+          <CardDescription>{!user ? 'Sua sessão expirou. Entre novamente para acessar a Arena.' : error || 'A partida terminou ou você não faz parte dela.'}</CardDescription>
+          {user && <Button type="button" variant="secondary" onClick={() => void reloadMatch(true)}>Tentar novamente</Button>}
           <Button type="button" className="mt-5" onClick={() => navigate(ROUTES.MULTIPLAYER)}>
             Voltar ao Multiplayer
           </Button>
@@ -393,6 +479,7 @@ export function MultiplayerArenaPage() {
         onExit={confirmNavigation}
       />
 
+      <div inert={resultOpen || (surrenderOpen && !matchEnded) || Boolean(pendingNavigation)}>
       <header className="multiplayer-arena-header">
         <div>
           <span className="lobby-eyebrow">Arena multiplayer · Casual 1v1</span>
@@ -401,11 +488,42 @@ export function MultiplayerArenaPage() {
         </div>
         <div className="multiplayer-arena-connection" role="status">
           <span className={realtimeConnected ? 'is-online' : ''} aria-hidden="true" />
-          {realtimeConnected ? 'Tempo real conectado' : 'Reconectando à Arena...'}
+          {matchEnded ? 'Partida encerrada' : realtimeConnected ? 'Tempo real conectado' : 'Reconectando à Arena...'}
         </div>
       </header>
 
       {error && <p className="multiplayer-arena-alert" role="alert">{error}</p>}
+
+      {!realtimeConnected && !matchEnded && (
+        <div className="arena-status-banner" role="status">
+          <strong>Reconectando à Arena...</strong>
+          <p>Continuamos consultando o placar oficial. Você pode manter seu rascunho no editor.</p>
+        </div>
+      )}
+      {battle.match.status === 'preparing' && (
+        <div className="arena-status-banner" role="status">
+          <strong>Preparando Arena...</strong>
+          <p>Carregando desafio e aguardando a liberação do round.</p>
+        </div>
+      )}
+      {judgeIsUnavailable && (
+        <div className="arena-status-banner arena-status-banner--warning" role="status">
+          <strong>Judge indisponível</strong>
+          <p>Não foi possível avaliar sua solução agora. Seu código continua no editor; tente novamente em alguns segundos.</p>
+        </div>
+      )}
+      {opponent.status === 'disconnected' && !matchEnded && (
+        <div className="arena-status-banner" role="status">
+          <strong>A conexão do adversário foi interrompida</strong>
+          <p>Aguardando a reconexão e a atualização oficial da partida.</p>
+        </div>
+      )}
+      {matchEnded && (
+        <div className="arena-status-banner arena-status-banner--result" role="status">
+          <div><strong>{resultTitle}</strong><p>A partida terminou. Você pode revisar sua solução abaixo.</p></div>
+          <Button type="button" variant="secondary" onClick={() => setDismissedResultId(null)}>Ver resultado</Button>
+        </div>
+      )}
 
       <section className="multiplayer-scoreboard" aria-label="Placar oficial">
         <div className="multiplayer-score-player multiplayer-score-player--self">
@@ -434,22 +552,22 @@ export function MultiplayerArenaPage() {
       />
 
       {battle.match.status === 'between_rounds' && (
-        <section className="multiplayer-round-intermission" aria-live="assertive">
+        <section className="multiplayer-round-intermission" aria-label="Intervalo entre rounds">
           <Badge variant="gold">Round encerrado</Badge>
-          <h2>Round para {playerName(previousRoundWinner)}</h2>
-          <p>{playerName(previousRoundWinner)} resolveu primeiro.</p>
+          <h2>{previousRoundWinner ? `Round para ${playerName(previousRoundWinner)}` : 'Placar atualizado'}</h2>
+          <p>{previousRoundWinner ? `${playerName(previousRoundWinner)} venceu este round.` : 'Aguardando o início do próximo desafio.'}</p>
           <div className="multiplayer-intermission-score">
             <span>{playerName(me)} <strong>{me.roundsWon}</strong></span>
             <b>×</b>
             <span><strong>{opponent.roundsWon}</strong> {playerName(opponent)}</span>
           </div>
-          <span>Próximo round em</span>
-          <strong className="multiplayer-round-countdown">{roundCountdown}</strong>
+          <span>{roundCountdown === 0 ? 'Carregando próximo desafio...' : 'Próximo round em'}</span>
+          {roundCountdown !== 0 && <strong className="multiplayer-round-countdown">{roundCountdown}s</strong>}
         </section>
       )}
 
       <div className="multiplayer-arena-workspace">
-        <main className="space-y-6 min-w-0">
+        <section className="space-y-6 min-w-0" aria-label="Desafio e editor">
           <Card
             variant="premium"
             className={`battle-challenge-card ${roundActive ? 'battle-challenge-card--protected' : ''}`}
@@ -503,12 +621,12 @@ export function MultiplayerArenaPage() {
             onPasteBlocked={reportPasteAttempt}
           />
 
-          <section className={`multiplayer-console multiplayer-console--${submissionTone}`} aria-live="polite">
+          <section className={`multiplayer-console multiplayer-console--${submissionTone}`} aria-live="polite" aria-busy={evaluating || action === 'run' || action === 'submit'}>
             <div>
               <span>Console da sua solução</span>
-              {ownSubmission && <Badge variant={ownSubmission.status === 'accepted' ? 'success' : 'default'}>{ownSubmission.status.replaceAll('_', ' ')}</Badge>}
+              {ownSubmission && <Badge variant={ownSubmission.status === 'accepted' ? 'success' : 'default'}>{submissionBadges[ownSubmission.status]}</Badge>}
             </div>
-            <strong>{action ? 'Enviando ao avaliador...' : resultMessage || 'Execute os exemplos públicos ou envie para os testes ocultos.'}</strong>
+            <strong>{action === 'run' || action === 'submit' ? 'Avaliando solução...' : resultMessage || 'Execute os exemplos públicos ou envie para os testes ocultos.'}</strong>
             {ownSubmission?.stdout && <pre>{ownSubmission.stdout}</pre>}
             {ownSubmission?.executionTime !== null && ownSubmission?.executionTime !== undefined && (
               <small>Tempo: {ownSubmission.executionTime.toFixed(3)}s{ownSubmission.memoryUsed !== null ? ` · Memória: ${ownSubmission.memoryUsed} KB` : ''}</small>
@@ -535,13 +653,14 @@ export function MultiplayerArenaPage() {
               {action === 'submit' ? 'Enviando...' : 'Enviar solução'}
             </Button>
           </div>
-        </main>
+          <p className="multiplayer-privacy-note">Executar verifica os exemplos públicos. Enviar solução participa do round após a avaliação oficial.</p>
+        </section>
 
         <aside className="multiplayer-arena-sidebar space-y-6">
           <Card variant="premium">
             <CardHeader>
-              <Badge variant={opponentConnected ? 'online' : 'warning'} className="w-fit">
-                {opponentConnected ? 'Online' : 'Conexão instável'}
+              <Badge variant={matchEnded ? 'default' : opponentConnected && realtimeConnected ? 'online' : 'warning'} className="w-fit">
+                {matchEnded ? 'Partida encerrada' : opponentConnected && realtimeConnected ? 'Online na Arena' : 'Sincronizando presença'}
               </Badge>
               <CardTitle>{playerName(opponent)}</CardTitle>
               <CardDescription>@{opponent.username}</CardDescription>
@@ -559,8 +678,8 @@ export function MultiplayerArenaPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Partida segura</CardTitle>
-              <CardDescription>O servidor decide desafio, testes, placar e vencedor.</CardDescription>
+              <CardTitle>Sua partida</CardTitle>
+              <CardDescription>O mesmo desafio para os dois jogadores. Placar e resultado oficiais.</CardDescription>
             </CardHeader>
             <CardContent className="multiplayer-match-metadata">
               <span>Round <strong>{battle.round.roundNumber}/{maxRounds}</strong></span>
@@ -569,32 +688,47 @@ export function MultiplayerArenaPage() {
             </CardContent>
           </Card>
 
-          {!matchFinished && (
+          {!matchEnded && (
             <Button
               type="button"
               variant="danger"
               fullWidth
               disabled={Boolean(action)}
-              onClick={() => void handleSurrender()}
+              onClick={() => setSurrenderOpen(true)}
             >
               {action === 'surrender' ? 'Desistindo...' : 'Desistir'}
             </Button>
           )}
         </aside>
       </div>
+      </div>
 
-      {matchFinished && (
-        <div className={`multiplayer-result-overlay multiplayer-result-overlay--${matchWon ? 'victory' : 'defeat'}`} role="dialog" aria-modal="true" aria-labelledby="multiplayer-result-title">
-          <section>
-            <Badge variant={matchWon ? 'gold' : 'danger'}>Partida encerrada</Badge>
-            <h2 id="multiplayer-result-title">{matchWon ? 'Vitória' : 'Derrota'}</h2>
-            <p>{matchWon ? 'Você venceu a batalha.' : `${playerName(opponent)} venceu a batalha.`}</p>
-            <div className="multiplayer-result-score">
+      {surrenderOpen && !matchEnded && (
+        <div className="battle-exit-dialog" role="presentation">
+          <section ref={surrenderDialogRef} className="battle-exit-dialog__panel" role="dialog" aria-modal="true" aria-labelledby="arena-surrender-title" aria-describedby="arena-surrender-description" tabIndex={-1}>
+            <span className="battle-exit-dialog__eyebrow">Batalha em andamento</span>
+            <h2 id="arena-surrender-title">Desistir da partida?</h2>
+            <p id="arena-surrender-description">Ao confirmar, a vitória será concedida ao adversário. Essa ação não pode ser desfeita.</p>
+            <div className="battle-exit-dialog__actions">
+              <Button type="button" variant="secondary" disabled={Boolean(action)} onClick={() => setSurrenderOpen(false)}>Continuar batalhando</Button>
+              <Button type="button" variant="danger" disabled={Boolean(action)} onClick={() => void handleSurrender()}>{action === 'surrender' ? 'Confirmando...' : 'Confirmar desistência'}</Button>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {resultOpen && (
+        <div className={`multiplayer-result-overlay multiplayer-result-overlay--${matchWon ? 'victory' : matchLost ? 'defeat' : 'neutral'}`}>
+          <section ref={resultDialogRef} role="dialog" aria-modal="true" aria-labelledby="multiplayer-result-title" aria-describedby="multiplayer-result-description" tabIndex={-1}>
+            <Badge variant={matchWon ? 'gold' : matchLost ? 'danger' : 'default'}>Resultado oficial · {MATCH_FORMAT_LABELS[battle.match.matchFormat]}</Badge>
+            <h2 id="multiplayer-result-title">{resultTitle}</h2>
+            <p id="multiplayer-result-description">{opponent.status === 'surrendered' ? 'O adversário saiu ao desistir da partida.' : me.status === 'surrendered' ? 'Você desistiu desta partida.' : matchWon ? 'Você venceu a batalha.' : matchLost ? `${playerName(opponent)} venceu a batalha.` : 'A partida foi encerrada sem um vencedor.'}</p>
+            <div className="multiplayer-result-score" aria-label={`Placar: você ${me.roundsWon}, adversário ${opponent.roundsWon}`}>
               <strong>{me.roundsWon}</strong><span>×</span><strong>{opponent.roundsWon}</strong>
             </div>
             <dl>
-              <div><dt>Tempo total</dt><dd>{formatDuration(battle.match.startedAt, battle.match.finishedAt, clockMs)}</dd></div>
-              <div><dt>Rounds</dt><dd>{battle.round.roundNumber}</dd></div>
+              {(battle.match.finishedAt || battle.match.cancelledAt) && <div><dt>Tempo total</dt><dd>{formatDuration(battle.match.startedAt, battle.match.finishedAt ?? battle.match.cancelledAt, clockMs)}</dd></div>}
+              <div><dt>Rounds vencidos</dt><dd>{me.roundsWon + opponent.roundsWon}</dd></div>
               <div><dt>Adversário</dt><dd>{playerName(opponent)}</dd></div>
             </dl>
             <div className="multiplayer-result-actions">
@@ -603,9 +737,16 @@ export function MultiplayerArenaPage() {
               </Button>
               <Button type="button" variant="gold" onClick={playAgain}>Jogar novamente</Button>
             </div>
+            <Button type="button" variant="ghost" className="arena-result-review" onClick={() => setDismissedResultId(battle.match.id)}>Revisar minha solução</Button>
           </section>
         </div>
       )}
     </div>
   )
+}
+
+export function MultiplayerArenaPage() {
+  const { matchId = '' } = useParams()
+  const { user } = useAuth()
+  return <MultiplayerArenaContent key={`${matchId}:${user?.id ?? 'guest'}`} />
 }

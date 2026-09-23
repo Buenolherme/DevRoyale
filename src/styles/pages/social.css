@@ -1,0 +1,27 @@
+.social-page { min-height: 65vh; }
+.social-toolbar, .social-section-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; }
+.social-tabs { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1.25rem; }
+.social-tabs button { border: 1px solid var(--color-border); border-radius: .8rem; padding: .65rem 1rem; font-size: .875rem; font-weight: 700; color: var(--color-text-muted); background: var(--color-bg-elevated); }
+.social-tabs button[aria-pressed="true"] { color: var(--color-primary-text); background: var(--color-primary-muted); border-color: var(--color-primary); }
+.social-tabs button:focus-visible, .social-identity:focus-visible { outline: 3px solid var(--color-secondary); outline-offset: 3px; }
+.social-list { display: grid; gap: .9rem; }
+.social-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.15rem; border: 1px solid var(--color-border); border-radius: 1rem; background: var(--color-bg-elevated); }
+.social-identity { display: flex; align-items: center; gap: .85rem; min-width: 0; border-radius: .6rem; }
+.social-identity > div { min-width: 0; }
+.social-identity strong, .social-identity small { display: block; overflow-wrap: anywhere; }
+.social-identity strong { color: var(--color-text); font-weight: 800; }
+.social-identity small { color: var(--color-accent-text); font-weight: 600; }
+.social-actions { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.social-presence { color: var(--color-text-muted); font-size: .8rem; margin-top: .3rem; }
+.social-feedback, .social-error { padding: 1rem; margin-bottom: 1rem; border: 1px solid var(--color-border-strong); border-radius: .9rem; overflow-wrap: anywhere; }
+.social-feedback { background: var(--color-success-muted); color: var(--color-success-text); }
+.social-error { background: var(--color-danger-muted); color: var(--color-danger-text); }
+.social-error button { margin-top: .5rem; }
+.public-profile-card { display: flex; align-items: flex-start; gap: clamp(1.5rem, 4vw, 3rem); padding: clamp(1.5rem, 4vw, 3rem); border: 1px solid var(--color-border-strong); border-radius: 1.5rem; background: var(--color-bg-elevated); box-shadow: var(--shadow-card); }
+.public-profile-avatar { width: 7rem; height: 7rem; font-size: 2rem; border-radius: 1.75rem; }
+.public-profile-identity { min-width: 0; flex: 1; }
+.public-profile-identity h2 { font-weight: 900; font-size: clamp(1.65rem, 5vw, 2.4rem); overflow-wrap: anywhere; }
+.public-profile-username { color: var(--color-accent-text); font-weight: 700; overflow-wrap: anywhere; }
+.public-profile-bio { white-space: pre-wrap; overflow-wrap: anywhere; color: var(--color-text-muted); line-height: 1.8; margin: 1.5rem 0; max-width: 42rem; }
+.public-profile-identity .social-actions { margin: 1.2rem 0; }
+@media(max-width: 767px) { .social-row { align-items: stretch; flex-direction: column; } .social-actions { justify-content: flex-start; } .public-profile-card { flex-direction: column; } }

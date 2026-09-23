@@ -525,7 +525,7 @@ export function BugArenaPage() {
       )}
 
       <div className="bug-arena-workspace grid gap-6 xl:grid-cols-[minmax(0,1fr)_280px]">
-        <main className="min-w-0 space-y-6" aria-label="Oficina de correção de bugs">
+        <section className="min-w-0 space-y-6" aria-label="Oficina de correção de bugs">
           <Card variant="premium" className="bug-challenge-card overflow-hidden">
             <CardHeader>
               <div className="flex flex-wrap items-start justify-between gap-4">
@@ -692,7 +692,7 @@ export function BugArenaPage() {
               Próximo Bug
             </Button>
           </div>
-        </main>
+        </section>
 
         <aside className="xl:sticky xl:top-24 xl:self-start" aria-label="Progresso na Bug Arena">
           <div className="grid gap-3 text-left">

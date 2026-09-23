@@ -5,6 +5,8 @@ export { Card, CardHeader, CardTitle, CardDescription, CardContent } from './Car
 export { Badge } from './Badge'
 export { ProgressBar } from './ProgressBar'
 export { Input } from './Input'
+export { Avatar } from './Avatar'
+export { PageState } from './PageState'
 export { Select } from './Select'
 export { ModeIcon } from './ModeIcon'
 export type { ModeIconName } from './ModeIcon'

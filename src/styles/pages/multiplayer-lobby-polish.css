@@ -1,0 +1,20 @@
+.multiplayer-page .multiplayer-entry-grid > *,
+.multiplayer-page .public-room-card > *,
+.lobby-grid > *, .lobby-player > * { min-width: 0; }
+.multiplayer-page .quick-match-status-card { min-height: 26rem; }
+.multiplayer-page .quick-match-status-card--found { border-color: var(--color-secondary); }
+.multiplayer-page .matchmaking-avatar { width: 4.5rem; height: 4.5rem; font-size: 1.4rem; }
+.multiplayer-page .quick-match-versus small { max-width: 12rem; overflow-wrap: anywhere; }
+.multiplayer-page .quick-match-versus .user-avatar > span { width: auto; height: auto; background: transparent; border: 0; border-radius: 0; }
+.multiplayer-page .quick-match-versus .user-avatar img { display: block; }
+.lobby-hero h1, .lobby-player p, .lobby-friend-row strong, .public-room-card h3 { overflow-wrap: anywhere; }
+.lobby-connection { flex-shrink: 0; }
+.lobby-page :is(button, a):focus-visible { outline: 3px solid var(--color-secondary); outline-offset: 3px; }
+@media (max-width: 639px) {
+  .lobby-player { align-items: stretch; flex-direction: column; gap: 1rem; }
+  .lobby-hero { align-items: flex-start; flex-direction: column; }
+  .lobby-friend-row { flex-wrap: wrap; gap: .75rem; }
+  .multiplayer-page .multiplayer-section-heading { flex-wrap: wrap; gap: 1rem; }
+  .multiplayer-page .quick-match-versus { gap: .75rem; }
+  .multiplayer-page .quick-match-versus small { max-width: 7rem; }
+}

@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { createRoom, getCurrentRoom, RoomServiceError, sendRoomInvite } from '@/lib/room-service'
 import type {
   DatabaseFriendship,
   Friend,
@@ -6,6 +7,8 @@ import type {
   FriendshipStatus,
   SocialProfile,
   SocialSearchResult,
+  SocialOverview,
+  SocialRelationshipState,
 } from '@/types/social'
 
 const PUBLIC_PROFILE_COLUMNS = 'id, username, display_name, avatar_url'
@@ -310,6 +313,105 @@ export async function blockUser(blockedUserId: string): Promise<void> {
   } catch (error) {
     throw mapSocialError(error)
   }
+}
+
+export async function cancelFriendRequest(friendshipId: string): Promise<void> {
+  try {
+    const currentUserId = await getCurrentUserId()
+    const { data, error } = await supabase
+      .from('friendships').delete().eq('id', friendshipId)
+      .eq('requester_id', currentUserId).eq('status', 'pending')
+      .select('id').maybeSingle()
+
+    if (error) throw error
+    if (!data) throw new SocialServiceError('Esta solicitação não está mais pendente.', 'ACTION_UNAVAILABLE')
+    notifySocialChange()
+  } catch (error) {
+    throw mapSocialError(error)
+  }
+}
+
+export async function getSocialOverview(): Promise<SocialOverview> {
+  try {
+    const currentUserId = await getCurrentUserId()
+    const [relationships, blockedIds] = await Promise.all([
+      getRelationshipsForCurrentUser(currentUserId), getBlockedUserIds(currentUserId),
+    ])
+    const otherId = (relationship: DatabaseFriendship) => relationship.requester_id === currentUserId
+      ? relationship.addressee_id : relationship.requester_id
+    const profiles = await getProfilesByIds([...relationships.map(otherId), ...blockedIds])
+    const overview: SocialOverview = { friends: [], incomingRequests: [], outgoingRequests: [], blockedProfiles: [] }
+
+    for (const relationship of relationships) {
+      const profile = profiles.get(otherId(relationship))
+      if (!profile || blockedIds.has(profile.id)) continue
+      if (relationship.status === 'accepted') {
+        overview.friends.push({ friendshipId: relationship.id, profile, friendsSince: relationship.updated_at })
+      } else {
+        const requests = relationship.requester_id === currentUserId ? overview.outgoingRequests : overview.incomingRequests
+        requests.push({ friendshipId: relationship.id, profile, createdAt: relationship.created_at })
+      }
+    }
+    overview.blockedProfiles = [...blockedIds].flatMap((id) => {
+      const profile = profiles.get(id)
+      return profile ? [profile] : []
+    }).sort((first, second) => first.username.localeCompare(second.username))
+    overview.incomingRequests.sort((first, second) => second.createdAt.localeCompare(first.createdAt))
+    overview.outgoingRequests.sort((first, second) => second.createdAt.localeCompare(first.createdAt))
+    return overview
+  } catch (error) {
+    throw mapSocialError(error)
+  }
+}
+
+export async function getSocialRelationship(targetUserId: string): Promise<{
+  relationshipId: string | null
+  socialState: SocialRelationshipState
+}> {
+  try {
+    const currentUserId = await getCurrentUserId()
+    const [relationshipResponse, blockResponse] = await Promise.all([
+      supabase.from('friendships').select(FRIENDSHIP_COLUMNS)
+        .or(`and(requester_id.eq.${currentUserId},addressee_id.eq.${targetUserId}),and(requester_id.eq.${targetUserId},addressee_id.eq.${currentUserId})`)
+        .in('status', ['pending', 'accepted']).maybeSingle(),
+      supabase.from('friend_blocks').select('blocked_id').eq('blocker_id', currentUserId)
+        .eq('blocked_id', targetUserId).maybeSingle(),
+    ])
+    if (relationshipResponse.error) throw relationshipResponse.error
+    if (blockResponse.error) throw blockResponse.error
+    const relationship = relationshipResponse.data
+    return {
+      relationshipId: relationship?.id ?? null,
+      socialState: blockResponse.data ? 'blocked' : relationship?.status === 'accepted' ? 'friend'
+        : relationship?.status === 'pending'
+          ? relationship.requester_id === currentUserId ? 'pending_sent' : 'pending_received'
+          : 'none',
+    }
+  } catch (error) {
+    throw mapSocialError(error)
+  }
+}
+
+export async function inviteFriendToBattle(friendUserId: string) {
+  const currentUserId = await getCurrentUserId()
+  // Another tab may have joined a room since the social page loaded.
+  const room = await getCurrentRoom() ?? await createRoom({
+    visibility: 'private', language: 'python', difficulty: 'basic', matchFormat: 'bo1', allowSpectators: false,
+  })
+  if (room.roomKind === 'quick_match') {
+    throw new RoomServiceError('Conclua ou saia da partida rápida antes de convidar um amigo.', 'QUICK_MATCH_RESTRICTED')
+  }
+  if (room.hostId !== currentUserId) {
+    throw new RoomServiceError('Você já está em uma sala de outro jogador. Saia dela para criar seu convite.', 'HOST_ONLY')
+  }
+  if (room.status !== 'waiting' && room.status !== 'ready') {
+    throw new RoomServiceError('Sua sala já está em uma batalha. Conclua a partida para enviar um convite.', 'INVITE_UNAVAILABLE')
+  }
+  if (room.members.length >= room.maxPlayers) {
+    throw new RoomServiceError('Sua sala já está completa. Libere uma vaga antes de convidar.', 'ROOM_FULL')
+  }
+  await sendRoomInvite(room.id, friendUserId)
+  return room
 }
 
 export async function unblockUser(blockedUserId: string): Promise<void> {

@@ -1,4 +1,4 @@
-import type { InputHTMLAttributes } from 'react'
+import { useId, type InputHTMLAttributes } from 'react'
 import { cn } from '@/utils'
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -6,8 +6,9 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   error?: string
 }
 
-export function Input({ label, id, error, className, ...props }: InputProps) {
-  const inputId = id ?? props.name
+export function Input({ label, id, error, className, 'aria-describedby': describedBy, ...props }: InputProps) {
+  const generatedId = useId()
+  const inputId = id ?? props.name ?? generatedId
 
   return (
     <div>
@@ -24,7 +25,7 @@ export function Input({ label, id, error, className, ...props }: InputProps) {
           className,
         )}
         aria-invalid={error ? true : undefined}
-        aria-describedby={error ? `${inputId}-error` : undefined}
+        aria-describedby={[describedBy, error && `${inputId}-error`].filter(Boolean).join(' ') || undefined}
         {...props}
       />
       {error && (

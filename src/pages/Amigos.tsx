@@ -1,695 +1,174 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { CrownIcon, PageHeader } from '@/components/layout'
-import {
-  Badge,
-  Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  Input,
-} from '@/components/ui'
+import { Link, useNavigate } from 'react-router-dom'
+import { PageHeader } from '@/components/layout'
+import { Avatar, Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input, PageState } from '@/components/ui'
+import { SocialActions } from '@/components/social/SocialActions'
 import { useAuth, usePresence } from '@/hooks'
+import { RoomServiceError } from '@/lib/room-service'
 import {
-  RoomServiceError,
-  createRoom,
-  getCurrentRoom,
-  sendRoomInvite,
-} from '@/lib/room-service'
-import {
-  SocialServiceError,
-  acceptFriendRequest,
-  blockUser,
-  getFriends,
-  getIncomingRequests,
-  normalizeSocialSearch,
-  rejectFriendRequest,
-  removeFriend,
-  searchProfiles,
-  sendFriendRequest,
-  unblockUser,
+  getSocialOverview, inviteFriendToBattle, normalizeSocialSearch, searchProfiles,
+  SocialServiceError, subscribeToSocialChanges,
 } from '@/lib/social-service'
-import type {
-  Friend,
-  FriendRequest,
-  SocialProfile,
-  SocialSearchResult,
-} from '@/types/social'
-import type { Room } from '@/types'
-import { roomPath } from '@/routes/paths'
+import { publicProfilePath, roomPath } from '@/routes/paths'
+import type { SocialOverview, SocialSearchResult } from '@/types/social'
+import '@/styles/pages/social.css'
 
-type SearchStatus = 'idle' | 'loading' | 'success' | 'error'
-
-function SocialAvatar({ profile }: { profile: SocialProfile }) {
-  return (
-    <div
-      className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-secondary/25 bg-secondary-muted"
-      aria-hidden="true"
-    >
-      {profile.avatarUrl ? (
-        <img
-          src={profile.avatarUrl}
-          alt=""
-          className="h-full w-full object-cover"
-          loading="lazy"
-        />
-      ) : (
-        <CrownIcon size={30} />
-      )}
-    </div>
-  )
-}
-
-function SocialIdentity({
-  profile,
-  online,
-  showPresence = false,
-}: {
-  profile: SocialProfile
-  online?: boolean
-  showPresence?: boolean
-}) {
-  return (
-    <div className="flex min-w-0 items-center gap-3">
-      <SocialAvatar profile={profile} />
-      <div className="min-w-0">
-        <p className="truncate font-bold text-foreground">{profile.displayName}</p>
-        <p className="truncate text-sm font-semibold text-secondary">@{profile.username}</p>
-        {showPresence && (
-          <p
-            className={`mt-1 text-xs font-semibold ${online ? 'text-success' : 'text-muted'}`}
-            aria-label={online ? 'Online' : 'Offline'}
-          >
-            <span aria-hidden="true">{online ? '●' : '○'}</span>{' '}
-            {online ? 'Online' : 'Offline'}
-          </p>
-        )}
-      </div>
-    </div>
-  )
-}
+const emptyOverview: SocialOverview = { friends: [], incomingRequests: [], outgoingRequests: [], blockedProfiles: [] }
+type Tab = 'friends' | 'online' | 'incoming' | 'outgoing' | 'blocked'
+const tabs: { key: Tab; label: string; empty: string; description: string }[] = [
+  { key: 'friends', label: 'Todos os amigos', empty: 'Sua equipe começa aqui', description: 'Busque pelo username de outro dev e envie sua primeira solicitação.' },
+  { key: 'online', label: 'Online', empty: 'Nenhum amigo online agora', description: 'Você ainda pode enviar convites aos seus amigos. Eles os verão quando voltarem.' },
+  { key: 'incoming', label: 'Recebidas', empty: 'Tudo em dia por aqui', description: 'Novas solicitações de amizade aparecerão nesta aba.' },
+  { key: 'outgoing', label: 'Enviadas', empty: 'Nenhuma solicitação enviada', description: 'Encontre um dev pela busca e convide-o para sua lista de amigos.' },
+  { key: 'blocked', label: 'Bloqueados', empty: 'Nenhum usuário bloqueado', description: 'Você pode gerenciar e desfazer bloqueios por aqui.' },
+]
 
 function socialErrorMessage(error: unknown): string {
-  return error instanceof SocialServiceError
-    ? error.message
-    : 'Não foi possível atualizar seus amigos. Tente novamente.'
+  return error instanceof SocialServiceError || error instanceof RoomServiceError
+    ? error.message : 'Não foi possível atualizar seus amigos. Tente novamente.'
 }
 
-export function AmigosPage() {
+function FriendsContent() {
   const navigate = useNavigate()
-  const { user } = useAuth()
-  const { isUserOnline } = usePresence()
-  const [friends, setFriends] = useState<Friend[]>([])
-  const [incomingRequests, setIncomingRequests] = useState<FriendRequest[]>([])
-  const [overviewLoading, setOverviewLoading] = useState(true)
-  const [overviewError, setOverviewError] = useState('')
+  const { connected, isUserOnline } = usePresence()
+  const [overview, setOverview] = useState<SocialOverview>(emptyOverview)
+  const [tab, setTab] = useState<Tab>('friends')
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [error, setError] = useState('')
   const [feedback, setFeedback] = useState('')
-
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<SocialSearchResult[]>([])
-  const [searchStatus, setSearchStatus] = useState<SearchStatus>('idle')
+  const [searchStatus, setSearchStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [searchError, setSearchError] = useState('')
+  const [searchRevision, setSearchRevision] = useState(0)
   const [busyUserId, setBusyUserId] = useState<string | null>(null)
-  const [currentRoom, setCurrentRoom] = useState<Room | null>(null)
-  const searchRequestId = useRef(0)
+  const mountedRef = useRef(true)
+  const busyRef = useRef(false)
+  const overviewPromise = useRef<Promise<void> | null>(null)
+  const query = normalizeSocialSearch(searchQuery)
 
-  const loadOverview = useCallback(async (showLoading = true) => {
-    if (showLoading) setOverviewLoading(true)
-    setOverviewError('')
-
-    try {
-      const [nextFriends, nextIncomingRequests, nextCurrentRoom] = await Promise.all([
-        getFriends(),
-        getIncomingRequests(),
-        getCurrentRoom().catch(() => null),
-      ])
-      setFriends(nextFriends)
-      setIncomingRequests(nextIncomingRequests)
-      setCurrentRoom(nextCurrentRoom)
-    } catch (error) {
-      setOverviewError(socialErrorMessage(error))
-    } finally {
-      setOverviewLoading(false)
-    }
+  const loadOverview = useCallback((): Promise<void> => {
+    if (overviewPromise.current) return overviewPromise.current
+    setRefreshing(true)
+    const request = (async () => {
+      try {
+        const next = await getSocialOverview()
+        if (!mountedRef.current) return
+        setOverview(next)
+        setError('')
+      } catch (cause) { if (mountedRef.current) setError(socialErrorMessage(cause)) }
+      finally { if (mountedRef.current) { setLoading(false); setRefreshing(false) } }
+    })()
+    overviewPromise.current = request
+    void request.finally(() => { if (overviewPromise.current === request) overviewPromise.current = null })
+    return request
   }, [])
 
-  const refreshSearch = useCallback(async () => {
-    const normalizedQuery = normalizeSocialSearch(searchQuery)
-    if (normalizedQuery.length < 2) return
-
-    const requestId = ++searchRequestId.current
-    setSearchStatus('loading')
-    setSearchError('')
-
-    try {
-      const results = await searchProfiles(normalizedQuery)
-      if (requestId !== searchRequestId.current) return
-      setSearchResults(results)
-      setSearchStatus('success')
-    } catch (error) {
-      if (requestId !== searchRequestId.current) return
-      setSearchResults([])
-      setSearchError(socialErrorMessage(error))
-      setSearchStatus('error')
-    }
-  }, [searchQuery])
-
   useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      void loadOverview()
-    }, 0)
-
-    return () => window.clearTimeout(timeoutId)
+    mountedRef.current = true
+    const refresh = () => { if (!busyRef.current && document.visibilityState === 'visible') void loadOverview() }
+    const initial = window.setTimeout(refresh, 0)
+    const timer = window.setInterval(refresh, 30_000)
+    const unsubscribe = subscribeToSocialChanges(refresh)
+    window.addEventListener('focus', refresh)
+    return () => {
+      mountedRef.current = false
+      window.clearTimeout(initial)
+      window.clearInterval(timer)
+      unsubscribe()
+      window.removeEventListener('focus', refresh)
+    }
   }, [loadOverview])
 
   useEffect(() => {
-    const normalizedQuery = normalizeSocialSearch(searchQuery)
-    if (normalizedQuery.length < 2) return
-    const requestId = searchRequestId.current
-
-    const timeoutId = window.setTimeout(() => {
-      void searchProfiles(normalizedQuery)
-        .then((results) => {
-          if (requestId !== searchRequestId.current) return
-          setSearchResults(results)
-          setSearchStatus('success')
-        })
-        .catch((error: unknown) => {
-          if (requestId !== searchRequestId.current) return
-          setSearchResults([])
-          setSearchError(socialErrorMessage(error))
-          setSearchStatus('error')
-        })
-    }, 350)
-
-    return () => window.clearTimeout(timeoutId)
-  }, [searchQuery])
-
-  const handleSearchChange = (value: string) => {
-    setSearchQuery(value)
-    searchRequestId.current += 1
-    setSearchResults([])
-    setSearchError('')
-
-    if (normalizeSocialSearch(value).length < 2) {
-      setSearchStatus('idle')
-    } else {
+    if (query.length < 2) return
+    let active = true
+    const timer = window.setTimeout(() => {
       setSearchStatus('loading')
-    }
-  }
+      void searchProfiles(query).then((results) => {
+        if (active) { setSearchResults(results); setSearchStatus('success'); setSearchError('') }
+      }).catch((cause: unknown) => {
+        if (active) { setSearchResults([]); setSearchStatus('error'); setSearchError(socialErrorMessage(cause)) }
+      })
+    }, 350)
+    return () => { active = false; window.clearTimeout(timer) }
+  }, [query, searchRevision])
 
-  const runAction = async (
-    profile: SocialProfile,
-    action: () => Promise<void>,
-    successMessage: string,
-  ) => {
-    if (busyUserId) return
-
+  const runAction = async (profile: SocialSearchResult, action: () => Promise<void>, message: string) => {
+    if (busyRef.current) return
+    busyRef.current = true
     setBusyUserId(profile.id)
-    setOverviewError('')
-    setSearchError('')
+    setError('')
     setFeedback('')
-
     try {
       await action()
-      await Promise.all([loadOverview(false), refreshSearch()])
-      setFeedback(successMessage)
-    } catch (error) {
-      setOverviewError(socialErrorMessage(error))
-    } finally {
-      setBusyUserId(null)
-    }
+      if (!mountedRef.current) return
+      await overviewPromise.current
+      await loadOverview()
+      if (!mountedRef.current) return
+      setSearchRevision((current) => current + 1)
+      setFeedback(message)
+    } catch (cause) { if (mountedRef.current) setError(socialErrorMessage(cause)) }
+    finally { busyRef.current = false; if (mountedRef.current) setBusyUserId(null) }
   }
 
-  const sortedFriends = useMemo(
-    () =>
-      [...friends].sort((first, second) => {
-        const firstOnline = isUserOnline(first.profile.id)
-        const secondOnline = isUserOnline(second.profile.id)
-        if (firstOnline !== secondOnline) return firstOnline ? -1 : 1
-
-        return (
-          first.profile.username.localeCompare(second.profile.username) ||
-          first.profile.displayName.localeCompare(second.profile.displayName)
-        )
-      }),
-    [friends, isUserOnline],
-  )
-  const onlineFriends = sortedFriends.filter((friend) => isUserOnline(friend.profile.id))
-
-  const handleBattleInvite = async (friend: Friend) => {
-    if (busyUserId) return
-    setBusyUserId(friend.profile.id)
-    setOverviewError('')
-    setFeedback('')
-
-    try {
-      let hostRoom = currentRoom
-      if (!hostRoom) {
-        hostRoom = await createRoom({
-          visibility: 'private',
-          language: 'python',
-          difficulty: 'basic',
-          matchFormat: 'bo1',
-          allowSpectators: false,
-        })
-        setCurrentRoom(hostRoom)
-      }
-
-      if (hostRoom.hostId !== user?.id) {
-        throw new RoomServiceError('Somente o host pode enviar convites desta sala.', 'HOST_ONLY')
-      }
-
-      await sendRoomInvite(hostRoom.id, friend.profile.id)
-      navigate(roomPath(hostRoom.code), {
-        state: { notice: `Convite enviado para @${friend.profile.username}.` },
-      })
-    } catch (battleError) {
-      setOverviewError(
-        battleError instanceof RoomServiceError
-          ? battleError.message
-          : 'Não foi possível preparar o convite de batalha.',
-      )
-    } finally {
-      setBusyUserId(null)
+  const rowsByTab = useMemo(() => {
+    const friends: SocialSearchResult[] = [...overview.friends].sort((a, b) => {
+      const online = Number(connected && isUserOnline(b.profile.id)) - Number(connected && isUserOnline(a.profile.id))
+      return online || a.profile.username.localeCompare(b.profile.username)
+    }).map((friend) => ({ ...friend.profile, relationshipId: friend.friendshipId, socialState: 'friend' }))
+    return {
+      friends,
+      online: connected ? friends.filter((friend) => isUserOnline(friend.id)) : [],
+      incoming: overview.incomingRequests.map((request): SocialSearchResult => ({ ...request.profile, relationshipId: request.friendshipId, socialState: 'pending_received' })),
+      outgoing: overview.outgoingRequests.map((request): SocialSearchResult => ({ ...request.profile, relationshipId: request.friendshipId, socialState: 'pending_sent' })),
+      blocked: overview.blockedProfiles.map((profile): SocialSearchResult => ({ ...profile, relationshipId: null, socialState: 'blocked' })),
     }
-  }
-
-  const renderSearchActions = (result: SocialSearchResult) => {
-    const disabled = busyUserId === result.id
-
-    if (result.socialState === 'blocked') {
-      return (
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          <Badge variant="danger" className="normal-case tracking-normal">Bloqueado</Badge>
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            disabled={disabled}
-            onClick={() =>
-              void runAction(
-                result,
-                () => unblockUser(result.id),
-                `@${result.username} foi desbloqueado.`,
-              )
-            }
-          >
-            Desbloquear
-          </Button>
-        </div>
-      )
-    }
-
-    if (result.socialState === 'pending_received' && result.relationshipId) {
-      return (
-        <div className="flex flex-wrap justify-end gap-2">
-          <Button
-            type="button"
-            size="sm"
-            disabled={disabled}
-            onClick={() =>
-              void runAction(
-                result,
-                () => acceptFriendRequest(result.relationshipId!),
-                `Você e @${result.username} agora são amigos.`,
-              )
-            }
-          >
-            Aceitar
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            disabled={disabled}
-            onClick={() =>
-              void runAction(
-                result,
-                () => rejectFriendRequest(result.relationshipId!),
-                'Solicitação recusada.',
-              )
-            }
-          >
-            Recusar
-          </Button>
-        </div>
-      )
-    }
-
-    if (result.socialState === 'pending_sent') {
-      return (
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          <Badge variant="warning" className="normal-case tracking-normal">
-            Solicitação enviada
-          </Badge>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            disabled={disabled}
-            onClick={() =>
-              void runAction(
-                result,
-                () => blockUser(result.id),
-                `@${result.username} foi bloqueado.`,
-              )
-            }
-          >
-            Bloquear
-          </Button>
-        </div>
-      )
-    }
-
-    if (result.socialState === 'friend') {
-      return <Badge variant="gold" className="normal-case tracking-normal">Amigo</Badge>
-    }
-
-    return (
-      <div className="flex flex-wrap justify-end gap-2">
-        <Button
-          type="button"
-          size="sm"
-          disabled={disabled}
-          onClick={() =>
-            void runAction(
-              result,
-              () => sendFriendRequest(result.id),
-              `Solicitação enviada para @${result.username}.`,
-            )
-          }
-        >
-          {disabled ? 'Enviando...' : 'Adicionar amigo'}
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          disabled={disabled}
-          onClick={() =>
-            void runAction(
-              result,
-              () => blockUser(result.id),
-              `@${result.username} foi bloqueado.`,
-            )
-          }
-        >
-          Bloquear
-        </Button>
-      </div>
-    )
-  }
+  }, [connected, isUserOnline, overview])
+  const selected = tabs.find((item) => item.key === tab)!
+  const searching = query.length >= 2
+  const rows = searching ? searchResults : rowsByTab[tab]
 
   return (
-    <div className="page-container">
-      <PageHeader
-        title="Amigos"
-        description="Encontre outros devs, gerencie solicitações e acompanhe quem está online."
-      >
-        {incomingRequests.length > 0 && (
-          <Badge variant="danger" className="normal-case tracking-normal">
-            {incomingRequests.length}{' '}
-            {incomingRequests.length === 1 ? 'solicitação' : 'solicitações'}
-          </Badge>
-        )}
+    <div className="page-container social-page">
+      <PageHeader title="Amigos" description="Encontre sua equipe, acompanhe solicitações e convide alguém para a Arena.">
+        {overview.incomingRequests.length > 0 && <Badge variant="danger">{overview.incomingRequests.length} {overview.incomingRequests.length === 1 ? 'solicitação' : 'solicitações'}</Badge>}
       </PageHeader>
-
-      {feedback && (
-        <p
-          className="mb-6 rounded-xl border border-success/25 bg-success-muted px-4 py-3 text-sm font-semibold text-success"
-          role="status"
-        >
-          {feedback}
-        </p>
-      )}
-      {overviewError && (
-        <p
-          className="mb-6 rounded-xl border border-danger/25 bg-danger-muted px-4 py-3 text-sm font-semibold text-danger"
-          role="alert"
-        >
-          {overviewError}
-        </p>
-      )}
-
+      {error && <div className="social-error" role="alert"><p>{error}</p><Button size="sm" variant="secondary" disabled={refreshing || Boolean(busyUserId)} onClick={() => void loadOverview()}>Tentar novamente</Button></div>}
+      {feedback && <p className="social-feedback" role="status">{feedback}</p>}
+      {busyUserId && <p className="mb-4 text-sm text-muted" role="status">Concluindo ação...</p>}
       <Card variant="premium" className="mb-6">
-        <CardHeader>
-          <CardTitle>Buscar jogador</CardTitle>
-          <CardDescription>
-            Digite pelo menos dois caracteres do username. Você pode usar ou omitir o @.
-          </CardDescription>
-        </CardHeader>
+        <CardHeader><CardTitle>Buscar jogador</CardTitle><CardDescription>Digite pelo menos dois caracteres do username, com ou sem @.</CardDescription></CardHeader>
         <CardContent>
-          <Input
-            id="friend-search"
-            label="Username"
-            type="search"
-            placeholder="@buenolherme"
-            value={searchQuery}
-            maxLength={25}
-            autoComplete="off"
-            spellCheck={false}
-            onChange={(event) => handleSearchChange(event.target.value)}
-          />
-
-          <div className="mt-5" aria-live="polite">
-            {searchStatus === 'loading' && (
-              <p className="text-sm font-semibold text-muted" role="status">
-                Buscando jogadores...
-              </p>
-            )}
-            {searchStatus === 'error' && (
-              <p className="text-sm font-semibold text-danger" role="alert">
-                {searchError}
-              </p>
-            )}
-            {searchStatus === 'success' && searchResults.length === 0 && (
-              <p className="text-sm text-muted">Nenhum jogador encontrado.</p>
-            )}
-            {searchResults.length > 0 && (
-              <div className="space-y-3">
-                {searchResults.map((result) => (
-                  <div
-                    key={result.id}
-                    className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <SocialIdentity
-                      profile={result}
-                      online={isUserOnline(result.id)}
-                      showPresence
-                    />
-                    {renderSearchActions(result)}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <Input label="Buscar por username" type="search" placeholder="@username" value={searchQuery} maxLength={25} autoComplete="off" spellCheck={false} onChange={(event) => {
+            setSearchQuery(event.target.value); setSearchResults([]); setSearchError('')
+            setSearchStatus(normalizeSocialSearch(event.target.value).length >= 2 ? 'loading' : 'idle')
+          }} />
         </CardContent>
       </Card>
-
-      <Card variant="premium" className="mb-6">
-        <CardHeader>
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <CardTitle>Solicitações recebidas</CardTitle>
-              <CardDescription>Pedidos aguardando sua decisão.</CardDescription>
-            </div>
-            <Badge variant={incomingRequests.length ? 'danger' : 'default'}>
-              {incomingRequests.length}
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {overviewLoading ? (
-            <p className="text-sm text-muted" role="status">Carregando solicitações...</p>
-          ) : incomingRequests.length === 0 ? (
-            <p className="text-sm text-muted">Nenhuma solicitação pendente.</p>
-          ) : (
-            <div className="space-y-3">
-              {incomingRequests.map((request) => {
-                const disabled = busyUserId === request.profile.id
-                return (
-                  <div
-                    key={request.friendshipId}
-                    className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <SocialIdentity
-                      profile={request.profile}
-                      online={isUserOnline(request.profile.id)}
-                      showPresence
-                    />
-                    <div className="flex flex-wrap justify-end gap-2">
-                      <Button
-                        type="button"
-                        size="sm"
-                        disabled={disabled}
-                        onClick={() =>
-                          void runAction(
-                            request.profile,
-                            () => acceptFriendRequest(request.friendshipId),
-                            `Você e @${request.profile.username} agora são amigos.`,
-                          )
-                        }
-                      >
-                        Aceitar
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        disabled={disabled}
-                        onClick={() =>
-                          void runAction(
-                            request.profile,
-                            () => rejectFriendRequest(request.friendshipId),
-                            'Solicitação recusada.',
-                          )
-                        }
-                      >
-                        Recusar
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        disabled={disabled}
-                        onClick={() =>
-                          void runAction(
-                            request.profile,
-                            () => blockUser(request.profile.id),
-                            `@${request.profile.username} foi bloqueado.`,
-                          )
-                        }
-                      >
-                        Bloquear
-                      </Button>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <div className="mb-6 grid gap-6 lg:grid-cols-2">
-        <Card variant="premium">
-          <CardHeader>
-            <CardTitle>Amigos online</CardTitle>
-            <CardDescription>Disponíveis agora no DevRoyale.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {overviewLoading ? (
-              <p className="text-sm text-muted" role="status">Carregando amigos...</p>
-            ) : onlineFriends.length === 0 ? (
-              <p className="text-sm text-muted">Nenhum amigo online neste momento.</p>
-            ) : (
-              <div className="space-y-3">
-                {onlineFriends.map((friend) => (
-                  <div
-                    key={friend.friendshipId}
-                    className="rounded-xl border border-success/20 bg-success-muted/40 p-4"
-                  >
-                    <SocialIdentity profile={friend.profile} online showPresence />
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card variant="premium">
-          <CardHeader>
-            <CardTitle>Todos os amigos</CardTitle>
-            <CardDescription>Online primeiro, depois em ordem de username.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {overviewLoading ? (
-              <p className="text-sm text-muted" role="status">Carregando amigos...</p>
-            ) : sortedFriends.length === 0 ? (
-              <p className="text-sm text-muted">
-                Sua lista ainda está vazia. Busque um jogador para começar.
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {sortedFriends.map((friend) => {
-                  const disabled = busyUserId === friend.profile.id
-                  return (
-                    <div
-                      key={friend.friendshipId}
-                      className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 sm:flex-row sm:items-center sm:justify-between"
-                    >
-                      <SocialIdentity
-                        profile={friend.profile}
-                        online={isUserOnline(friend.profile.id)}
-                        showPresence
-                      />
-                      <div className="flex flex-wrap justify-end gap-2">
-                        <Button
-                          type="button"
-                          size="sm"
-                          disabled={disabled || Boolean(currentRoom && currentRoom.hostId !== user?.id)}
-                          onClick={() => void handleBattleInvite(friend)}
-                        >
-                          {currentRoom && currentRoom.hostId !== user?.id
-                            ? 'Sala atual tem outro host'
-                            : currentRoom
-                              ? 'Convidar para batalha'
-                              : 'Criar sala e convidar'}
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          size="sm"
-                          disabled={disabled}
-                          onClick={() =>
-                            void runAction(
-                              friend.profile,
-                              () => removeFriend(friend.friendshipId),
-                              `@${friend.profile.username} foi removido da sua lista.`,
-                            )
-                          }
-                        >
-                          Remover
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          disabled={disabled}
-                          onClick={() =>
-                            void runAction(
-                              friend.profile,
-                              () => blockUser(friend.profile.id),
-                              `@${friend.profile.username} foi bloqueado.`,
-                            )
-                          }
-                        >
-                          Bloquear
-                        </Button>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+      <div className="social-toolbar">
+        <div><h2 className="text-xl font-bold">{searching ? 'Resultados da busca' : 'Sua comunidade'}</h2><p className="text-sm text-muted">{connected ? 'Presença atualizada em tempo real' : 'Presença indisponível. Suas amizades continuam acessíveis.'}</p></div>
+        <Button variant="secondary" size="sm" disabled={refreshing || Boolean(busyUserId)} onClick={() => { void loadOverview(); if (searching) setSearchRevision((current) => current + 1) }}>{refreshing ? 'Atualizando...' : 'Atualizar'}</Button>
       </div>
-
-      {!overviewLoading &&
-        friends.length === 0 &&
-        incomingRequests.length === 0 &&
-        !searchQuery && (
-          <Card className="text-center">
-            <CardTitle>Construa sua rede na arena</CardTitle>
-            <CardDescription>
-              Procure pelo username de outro jogador para enviar a primeira solicitação.
-            </CardDescription>
-          </Card>
-        )}
+      {!searching && <div className="social-tabs" role="group" aria-label="Filtrar amizades">{tabs.map((item) => <button key={item.key} type="button" aria-pressed={tab === item.key} onClick={() => setTab(item.key)}>{item.label} <span>({rowsByTab[item.key].length})</span></button>)}</div>}
+      {loading || (searching && searchStatus === 'loading') ? <PageState loading title={searching ? 'Buscando jogadores...' : 'Carregando sua comunidade...'} description="Preparando suas conexões na Arena." />
+        : searching && searchError ? <PageState title="Busca indisponível" description={searchError}><Button variant="secondary" onClick={() => setSearchRevision((current) => current + 1)}>Tentar novamente</Button></PageState>
+          : !rows.length ? <PageState title={searching ? 'Nenhum jogador encontrado' : tab === 'online' && !connected ? 'Aguardando conexão de presença' : error ? 'Sua comunidade está indisponível' : selected.empty} description={searching ? 'Confira o username ou tente um início de nome diferente.' : tab === 'online' && !connected ? 'Não é possível confirmar quem está online agora.' : error ? 'Tente atualizar novamente em alguns segundos.' : selected.description} />
+            : <div className="social-list">{rows.map((profile) => <article className="social-row" key={profile.id}>
+              <Link to={publicProfilePath(profile.username)} className="social-identity">
+                <Avatar name={profile.displayName} src={profile.avatarUrl} />
+                <div><strong>{profile.displayName}</strong><small>@{profile.username}</small><p className="social-presence">{connected ? isUserOnline(profile.id) ? '● Online' : '○ Offline' : 'Presença indisponível'}</p></div>
+              </Link>
+              <SocialActions profile={profile} busy={Boolean(busyUserId)} onAction={(action, message) => void runAction(profile, action, message)} onInvite={() => void runAction(profile, async () => {
+                const room = await inviteFriendToBattle(profile.id)
+                if (mountedRef.current) navigate(roomPath(room.code), { state: { notice: `Convite enviado para @${profile.username}.` } })
+              }, 'Convite enviado.')} />
+            </article>)}</div>}
     </div>
   )
+}
+export function AmigosPage() {
+  const { user } = useAuth()
+  return <FriendsContent key={user?.id ?? 'guest'} />
 }

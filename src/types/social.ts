@@ -53,3 +53,10 @@ export interface OnlinePresence {
   username: string
   status: PresenceStatus
 }
+
+export interface SocialOverview {
+  friends: Friend[]
+  incomingRequests: FriendRequest[]
+  outgoingRequests: FriendRequest[]
+  blockedProfiles: SocialProfile[]
+}

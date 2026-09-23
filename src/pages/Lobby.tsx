@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import { CrownIcon } from '@/components/layout'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { Avatar, PageState } from '@/components/ui'
+import '@/styles/pages/multiplayer-lobby-polish.css'
 import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Select } from '@/components/ui'
 import { useAuth, usePresence } from '@/hooks'
 import {
@@ -26,7 +27,7 @@ import {
   updateRoomSettings,
 } from '@/lib/room-service'
 import { getFriends } from '@/lib/social-service'
-import { ROUTES, battleMatchPath } from '@/routes/paths'
+import { ROUTES, battleMatchPath, publicProfilePath } from '@/routes/paths'
 import {
   MATCH_FORMAT_LABELS,
   ROOM_DIFFICULTY_LABELS,
@@ -42,11 +43,12 @@ function roomErrorMessage(error: unknown): string {
     : 'Não foi possível atualizar a sala. Tente novamente.'
 }
 
-export function LobbyPage() {
+function LobbyContent() {
   const { code = '' } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
   const { user } = useAuth()
+  const userId = user?.id
   const { isUserOnline } = usePresence()
   const [room, setRoom] = useState<Room | null>(null)
   const [settings, setSettings] = useState<RoomSettings | null>(null)
@@ -63,9 +65,13 @@ export function LobbyPage() {
   const [invitePanelOpen, setInvitePanelOpen] = useState(false)
   const [clockMs, setClockMs] = useState(() => Date.now())
   const [opponentLeft, setOpponentLeft] = useState(false)
+  const [activationRetry, setActivationRetry] = useState(0)
+  const [activationFailed, setActivationFailed] = useState(false)
   const navigatedMatchRef = useRef<string | null>(null)
   const lobbyMountedRef = useRef(true)
   const activeRoomIdRef = useRef<string | null>(null)
+  const settingsDirtyRef = useRef(false)
+  const loadPromiseRef = useRef<Promise<Room> | null>(null)
 
   const currentMember = room?.members.find((member) => member.userId === user?.id)
   const isQuickMatch = room?.roomKind === 'quick_match'
@@ -76,6 +82,7 @@ export function LobbyPage() {
   )
 
   const syncSettings = useCallback((nextRoom: Room) => {
+    if (settingsDirtyRef.current && nextRoom.status !== 'starting' && nextRoom.status !== 'in_match') return
     setSettings({
       visibility: nextRoom.visibility,
       language: nextRoom.language,
@@ -85,9 +92,13 @@ export function LobbyPage() {
     })
   }, [])
 
-  const loadRoom = useCallback(async (joinWhenNeeded = false) => {
+  const loadRoom = useCallback((joinWhenNeeded = false): Promise<Room> => {
+    if (loadPromiseRef.current) return loadPromiseRef.current
+    const request = (async () => {
     try {
       const nextRoom = await getRoom(code)
+      if (!lobbyMountedRef.current) return nextRoom
+      setError('')
       setRoom(nextRoom)
       syncSettings(nextRoom)
       return nextRoom
@@ -98,12 +109,21 @@ export function LobbyPage() {
         (loadError.code === 'ROOM_NOT_FOUND' || loadError.code === 'NOT_ROOM_MEMBER')
       ) {
         const joinedRoom = await joinRoomByCode(code)
+        if (!lobbyMountedRef.current) return joinedRoom
         setRoom(joinedRoom)
         syncSettings(joinedRoom)
         return joinedRoom
       }
       throw loadError
     }
+    })()
+    loadPromiseRef.current = request
+    void request.then(() => {
+      if (loadPromiseRef.current === request) loadPromiseRef.current = null
+    }, () => {
+      if (loadPromiseRef.current === request) loadPromiseRef.current = null
+    })
+    return request
   }, [code, syncSettings])
 
   useEffect(() => {
@@ -113,7 +133,10 @@ export function LobbyPage() {
       setError('')
       try {
         const nextRoom = await loadRoom(true)
-        const nextFriends = nextRoom.roomKind === 'custom' ? await getFriends() : []
+        const nextFriends = nextRoom.roomKind === 'custom' ? await getFriends().catch(() => {
+          if (active) setError('A sala está pronta, mas não foi possível carregar seus amigos. Atualize a página para tentar novamente.')
+          return []
+        }) : []
         if (!active) return
         setRoom(nextRoom)
         setFriends(nextFriends)
@@ -159,36 +182,40 @@ export function LobbyPage() {
         },
       },
     )
-  }, [loadRoom, navigate, room?.roomKind, roomId, user])
+  }, [loadRoom, navigate, room?.roomKind, roomId, user?.id, user?.username])
 
   useEffect(() => {
-    if (!isQuickMatch || opponentLeft) return
+    if (!roomId || opponentLeft) return
     const intervalId = window.setInterval(() => {
+      if (document.visibilityState !== 'visible') return
       void loadRoom(false).catch((loadError: unknown) => {
         if (
           loadError instanceof RoomServiceError &&
           (loadError.code === 'NOT_ROOM_MEMBER' || loadError.code === 'ROOM_NOT_FOUND')
         ) {
-          setOpponentLeft(true)
+          if (isQuickMatch) setOpponentLeft(true)
+          else navigate(ROUTES.MULTIPLAYER, { replace: true, state: { notice: 'Esta sala foi encerrada ou você não faz mais parte dela.' } })
+        } else {
+          setError(roomErrorMessage(loadError))
         }
       })
-    }, 8_000)
+    }, realtimeConnected ? 15_000 : 5_000)
     return () => window.clearInterval(intervalId)
-  }, [isQuickMatch, loadRoom, opponentLeft])
+  }, [isQuickMatch, loadRoom, navigate, opponentLeft, realtimeConnected, roomId])
 
   useEffect(() => {
-    if (!isQuickMatch || !roomId || !user) return
-    const channel = subscribeToMatchmaking(user.id, (event) => {
+    if (!isQuickMatch || !roomId || !userId) return
+    const channel = subscribeToMatchmaking(userId, (event) => {
       if (event.type === 'queue_cancelled' && event.matchedRoomId === roomId) {
         setOpponentLeft(true)
       }
     })
     return () => void unsubscribeFromMatchmaking(channel)
-  }, [isQuickMatch, roomId, user])
+  }, [isQuickMatch, roomId, userId])
 
   useEffect(() => {
     if (room?.status !== 'starting' || !room.countdownStartedAt) return
-    const intervalId = window.setInterval(() => setClockMs(Date.now()), 100)
+    const intervalId = window.setInterval(() => setClockMs(Date.now()), 250)
     return () => window.clearInterval(intervalId)
   }, [room?.countdownStartedAt, room?.status])
 
@@ -214,8 +241,11 @@ export function LobbyPage() {
   useEffect(() => {
     if (!roomId || (roomStatus !== 'in_match' && !arenaReady)) return
     let retryTimer: number | null = null
+    let active = true
+    let retries = 0
 
     const openArena = async () => {
+      if (!active) return
       try {
         const currentState = roomStatus === 'in_match' ? await getCurrentMatch() : null
         const currentMatchId = currentState?.match.roomId === roomId
@@ -223,6 +253,7 @@ export function LobbyPage() {
           : null
         const matchId = currentMatchId ?? (await activateMatch(roomId)).id
         if (
+          !active ||
           !lobbyMountedRef.current ||
           activeRoomIdRef.current !== roomId ||
           navigatedMatchRef.current === matchId
@@ -231,15 +262,18 @@ export function LobbyPage() {
         navigate(battleMatchPath(matchId), { replace: true })
       } catch (activationError) {
         if (
+          !active ||
           !lobbyMountedRef.current ||
           activeRoomIdRef.current !== roomId ||
           navigatedMatchRef.current
         ) return
         if (
           activationError instanceof MultiplayerBattleServiceError &&
-          activationError.code === 'NOT_ACTIVE'
+          activationError.code === 'NOT_ACTIVE' &&
+          retries < 5
         ) {
-          retryTimer = window.setTimeout(openArena, 350)
+          retries += 1
+          retryTimer = window.setTimeout(openArena, 1_000)
           return
         }
 
@@ -248,15 +282,17 @@ export function LobbyPage() {
             ? activationError.message
             : 'Não foi possível abrir a Arena.',
         )
+        setActivationFailed(true)
       }
     }
 
     void openArena()
 
     return () => {
+      active = false
       if (retryTimer !== null) window.clearTimeout(retryTimer)
     }
-  }, [arenaReady, navigate, roomId, roomStatus])
+  }, [activationRetry, arenaReady, navigate, roomId, roomStatus])
 
   const runAction = async (key: string, action: () => Promise<unknown>) => {
     if (busyAction) return
@@ -265,6 +301,7 @@ export function LobbyPage() {
     setFeedback('')
     try {
       await action()
+      await loadPromiseRef.current?.catch(() => undefined)
       await loadRoom(false)
     } catch (actionError) {
       setError(roomErrorMessage(actionError))
@@ -277,7 +314,7 @@ export function LobbyPage() {
     const confirmation = isQuickMatch
       ? 'Sair da partida rápida? O lobby será encerrado para os dois jogadores.'
       : 'Sair desta sala?'
-    if (!room || !window.confirm(confirmation)) return
+    if (!room || busyAction || !window.confirm(confirmation)) return
     setBusyAction('leave')
     try {
       await leaveRoom(room.id)
@@ -292,7 +329,7 @@ export function LobbyPage() {
   }
 
   const handleCancel = async () => {
-    if (!room || !window.confirm('Cancelar a sala para todos os jogadores?')) return
+    if (!room || busyAction || !window.confirm('Cancelar a sala para todos os jogadores?')) return
     setBusyAction('cancel')
     try {
       await cancelRoom(room.id)
@@ -309,7 +346,7 @@ export function LobbyPage() {
   )
 
   if (loading) {
-    return <div className="page-container"><Card><p role="status">Preparando lobby seguro...</p></Card></div>
+    return <div className="page-container"><PageState loading title="Preparando lobby..." description="Reunindo jogadores e recuperando as configurações da sala." /></div>
   }
 
   if (!room || !settings || !currentMember) {
@@ -335,10 +372,10 @@ export function LobbyPage() {
           <p>
             {isQuickMatch
               ? 'Sem host ou configurações: quando os dois estiverem prontos, a contagem começa automaticamente.'
-              : 'O banco mantém o estado oficial; o canal privado atualiza os dois jogadores.'}
+              : 'Compartilhe o código, ajuste as regras e confirme quando estiver pronto para o duelo.'}
           </p>
         </div>
-        <div className="lobby-connection">
+        <div className="lobby-connection" role="status">
           <span className={realtimeConnected ? 'is-online' : ''} aria-hidden="true" />
           {realtimeConnected ? 'Tempo real conectado' : 'Reconectando...'}
         </div>
@@ -363,6 +400,7 @@ export function LobbyPage() {
           )}
         </section>
       )}
+      {activationFailed && (room.status === 'in_match' || arenaReady) && <Button type="button" variant="secondary" className="mb-6" onClick={() => { setError(''); setActivationFailed(false); setActivationRetry((current) => current + 1) }}>Tentar abrir a Arena novamente</Button>}
 
       {opponentLeft ? (
         <Card variant="premium" className="quick-match-opponent-left text-center" aria-live="assertive">
@@ -410,12 +448,10 @@ export function LobbyPage() {
                 return (
                   <div key={member.userId} className={`lobby-player ${member.ready ? 'lobby-player--ready' : ''}`}>
                     <div className="flex min-w-0 items-center gap-3">
-                      <div className={`lobby-player__avatar ${isQuickMatch ? 'lobby-player__avatar--quick' : ''}`}>
-                        {isQuickMatch ? member.profile.displayName.slice(0, 1).toUpperCase() : <CrownIcon size={30} />}
-                      </div>
+                      <Avatar name={member.profile.displayName} src={member.profile.avatarUrl} />
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
-                          <strong className="truncate">{member.profile.displayName}</strong>
+                          <Link to={publicProfilePath(member.profile.username)} className="truncate font-bold focus-ring">{member.profile.displayName}</Link>
                           {!isQuickMatch && member.role === 'host' && <Badge variant="gold">Host</Badge>}
                         </div>
                         <p>@{member.profile.username}</p>
@@ -459,7 +495,7 @@ export function LobbyPage() {
                 disabled={Boolean(busyAction) || room.status === 'starting'}
                 onClick={() => void runAction('ready', () => setReady(room.id, !currentMember.ready))}
               >
-                {currentMember.ready ? 'Cancelar pronto' : 'Pronto'}
+                {busyAction === 'ready' ? 'Atualizando...' : currentMember.ready ? 'Cancelar pronto' : 'Pronto para jogar'}
               </Button>
               {isHost && (
                 <Button
@@ -468,7 +504,7 @@ export function LobbyPage() {
                   disabled={!canStart || Boolean(busyAction) || room.status === 'starting'}
                   onClick={() => void runAction('start', () => startCountdown(room.id))}
                 >
-                  Iniciar batalha
+                  {busyAction === 'start' ? 'Preparando...' : 'Iniciar batalha'}
                 </Button>
               )}
               {isHost && (
@@ -538,18 +574,22 @@ export function LobbyPage() {
               <CardTitle>Configuração</CardTitle>
               <CardDescription>{isHost ? 'Alterações resetam o pronto dos jogadores.' : 'Somente o host pode alterar.'}</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4" onChange={() => { settingsDirtyRef.current = true }}>
               <Select label="Linguagem" value={settings.language} disabled={!isHost || room.status === 'starting'} options={Object.entries(ROOM_LANGUAGE_LABELS).map(([value, label]) => ({ value, label }))} onChange={(event) => setSettings((current) => current && ({ ...current, language: event.target.value as RoomSettings['language'] }))} />
               <Select label="Dificuldade" value={settings.difficulty} disabled={!isHost || room.status === 'starting'} options={Object.entries(ROOM_DIFFICULTY_LABELS).map(([value, label]) => ({ value, label }))} onChange={(event) => setSettings((current) => current && ({ ...current, difficulty: event.target.value as RoomSettings['difficulty'] }))} />
               <Select label="Formato" value={settings.matchFormat} disabled={!isHost || room.status === 'starting'} options={Object.entries(MATCH_FORMAT_LABELS).map(([value, label]) => ({ value, label }))} onChange={(event) => setSettings((current) => current && ({ ...current, matchFormat: event.target.value as RoomSettings['matchFormat'] }))} />
               <Select label="Visibilidade" value={settings.visibility} disabled={!isHost || room.status === 'starting'} options={[{ value: 'public', label: 'Pública' }, { value: 'private', label: 'Privada' }]} onChange={(event) => setSettings((current) => current && ({ ...current, visibility: event.target.value as RoomSettings['visibility'] }))} />
               <label className="multiplayer-check-row">
                 <input type="checkbox" checked={settings.allowSpectators} disabled={!isHost || room.status === 'starting'} onChange={(event) => setSettings((current) => current && ({ ...current, allowSpectators: event.target.checked }))} />
-                Espectadores permitidos
+                Permitir espectadores quando disponíveis
               </label>
               {isHost && (
-                <Button type="button" variant="secondary" fullWidth disabled={Boolean(busyAction) || room.status === 'starting'} onClick={() => void runAction('settings', () => updateRoomSettings(room.id, settings))}>
-                  Salvar configuração
+                <Button type="button" variant="secondary" fullWidth disabled={Boolean(busyAction) || room.status === 'starting'} onClick={() => void runAction('settings', async () => {
+                  await updateRoomSettings(room.id, settings)
+                  settingsDirtyRef.current = false
+                  setFeedback('Configuração salva. Os jogadores precisam confirmar que estão prontos novamente.')
+                })}>
+                  {busyAction === 'settings' ? 'Salvando...' : 'Salvar configuração'}
                 </Button>
               )}
             </CardContent>
@@ -574,4 +614,10 @@ export function LobbyPage() {
       )}
     </div>
   )
+}
+
+export function LobbyPage() {
+  const { code = '' } = useParams()
+  const { user } = useAuth()
+  return <LobbyContent key={`${code}:${user?.id ?? 'guest'}`} />
 }

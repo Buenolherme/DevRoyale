@@ -65,11 +65,11 @@ export function CardDescription({ children, className }: CardDescriptionProps) {
   return <p className={cn('mt-1.5 text-sm leading-relaxed text-muted', className)}>{children}</p>
 }
 
-interface CardContentProps {
+interface CardContentProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode
   className?: string
 }
 
-export function CardContent({ children, className }: CardContentProps) {
-  return <div className={cn(className)}>{children}</div>
+export function CardContent({ children, className, ...props }: CardContentProps) {
+  return <div className={cn(className)} {...props}>{children}</div>
 }

@@ -24,3 +24,5 @@ export interface UpdateProfileInput {
   avatarUrl?: string | null
   bio?: string | null
 }
+
+export type PublicProfile = Pick<Profile, 'id' | 'username' | 'displayName' | 'avatarUrl' | 'bio'>

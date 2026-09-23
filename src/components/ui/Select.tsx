@@ -1,4 +1,4 @@
-import type { SelectHTMLAttributes } from 'react'
+import { useId, type SelectHTMLAttributes } from 'react'
 import { cn } from '@/utils'
 
 interface SelectOption {
@@ -20,9 +20,11 @@ export function Select({
   placeholder = 'Selecione...',
   error,
   className,
+  'aria-describedby': describedBy,
   ...props
 }: SelectProps) {
-  const selectId = id ?? props.name
+  const generatedId = useId()
+  const selectId = id ?? props.name ?? generatedId
 
   return (
     <div>
@@ -38,10 +40,10 @@ export function Select({
           className,
         )}
         aria-invalid={error ? true : undefined}
-        aria-describedby={error ? `${selectId}-error` : undefined}
+        aria-describedby={[describedBy, error && `${selectId}-error`].filter(Boolean).join(' ') || undefined}
         {...props}
       >
-        <option value="">{placeholder}</option>
+        <option value="" disabled>{placeholder}</option>
         {options.map((opt) => (
           <option key={opt.value} value={opt.value}>
             {opt.label}

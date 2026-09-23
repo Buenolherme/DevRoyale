@@ -26,7 +26,7 @@ import {
   ProfileServiceError,
   normalizeUsername,
 } from '@/lib/profile-service'
-import { ROUTES } from '@/routes/paths'
+import { ROUTES, publicProfilePath } from '@/routes/paths'
 import type { AuthUser } from '@/types'
 import {
   MAIN_LANGUAGE_OPTIONS,
@@ -211,12 +211,8 @@ function AuthenticatedProfile({ user }: { user: AuthUser }) {
       const optimizedAvatar = await optimizeProfileAvatar(file)
       setDraft((current) => ({ ...current, avatarDataUrl: optimizedAvatar }))
       setProfileError(null)
-    } catch (error) {
-      setProfileError(
-        error instanceof Error
-          ? error.message
-          : 'Não foi possível otimizar a foto selecionada.',
-      )
+    } catch {
+      setProfileError('Não foi possível preparar a foto. Tente outra imagem JPG, PNG ou WebP.')
     } finally {
       setIsAvatarProcessing(false)
     }
@@ -229,6 +225,7 @@ function AuthenticatedProfile({ user }: { user: AuthUser }) {
         description="Sua identidade, preferências e trajetória no DevRoyale."
       >
         <Badge variant="gold">Nível {progress.level}</Badge>
+        {user.username && <Link to={publicProfilePath(user.username)} className={getButtonClassName({ variant: 'secondary', size: 'sm' })}>Ver perfil público</Link>}
       </PageHeader>
 
       <Card variant="premium" className="profile-identity-card mb-6">
@@ -483,5 +480,5 @@ function AuthenticatedProfile({ user }: { user: AuthUser }) {
 
 export function PerfilPage() {
   const { user } = useAuth()
-  return user ? <AuthenticatedProfile user={user} /> : <VisitorProfile />
+  return user ? <AuthenticatedProfile key={user.id} user={user} /> : <VisitorProfile />
 }

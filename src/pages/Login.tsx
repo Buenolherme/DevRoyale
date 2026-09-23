@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Logo } from '@/components/layout'
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input } from '@/components/ui'
+import { Button, Card, CardContent, CardDescription, CardHeader, Input } from '@/components/ui'
 import { AuthServiceError } from '@/lib/auth-service'
 import { useAuth } from '@/hooks'
 import { ROUTES } from '@/routes/paths'
@@ -59,7 +59,7 @@ export function LoginPage() {
         </div>
         <Card variant="premium">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl">Entrar na Arena</CardTitle>
+            <h1 className="text-2xl font-bold text-foreground">Entrar na Arena</h1>
             <CardDescription>Acesse sua conta DevRoyale</CardDescription>
           </CardHeader>
           <CardContent>

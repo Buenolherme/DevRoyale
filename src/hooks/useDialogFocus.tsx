@@ -21,7 +21,7 @@ function getFocusableElements(container: HTMLElement | null): HTMLElement[] {
 
   return Array.from(
     container.querySelectorAll<HTMLElement>(focusableSelector),
-  ).filter((element) => !element.hasAttribute('disabled'))
+  ).filter((element) => !element.hasAttribute('disabled') && element.getClientRects().length > 0 && !element.closest('[inert]'))
 }
 
 export function useDialogFocus({
@@ -60,12 +60,19 @@ export function useDialogFocus({
       if (event.key !== 'Tab') return
 
       const focusableElements = getFocusableElements(containerRef.current)
-      if (!focusableElements.length) return
+      if (!focusableElements.length) {
+        event.preventDefault()
+        containerRef.current?.focus()
+        return
+      }
 
       const first = focusableElements[0]
       const last = focusableElements[focusableElements.length - 1]
 
-      if (event.shiftKey && document.activeElement === first) {
+      if (!containerRef.current?.contains(document.activeElement)) {
+        event.preventDefault()
+        first?.focus()
+      } else if (event.shiftKey && document.activeElement === first) {
         event.preventDefault()
         last?.focus()
       } else if (!event.shiftKey && document.activeElement === last) {

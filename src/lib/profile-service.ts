@@ -3,6 +3,7 @@ import type { Database } from '@/types/database'
 import type {
   DatabaseProfile,
   Profile,
+  PublicProfile,
   UpdateProfileInput,
 } from '@/types/profile'
 
@@ -163,6 +164,26 @@ export async function getCurrentProfile(): Promise<Profile | null> {
   }
 
   return getProfile(data.user.id)
+}
+
+export async function getPublicProfileByUsername(username: string): Promise<PublicProfile | null> {
+  const normalized = normalizeUsername(username)
+  if (!USERNAME_PATTERN.test(normalized)) return null
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, username, display_name, avatar_url, bio')
+    .eq('username', normalized)
+    .maybeSingle()
+
+  if (error) throw mapProfileError(error)
+  return data ? {
+    id: data.id,
+    username: data.username,
+    displayName: data.display_name,
+    avatarUrl: data.avatar_url,
+    bio: data.bio,
+  } : null
 }
 
 export async function isUsernameAvailable(username: string): Promise<boolean> {

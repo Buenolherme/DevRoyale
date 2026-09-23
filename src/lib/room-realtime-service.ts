@@ -104,21 +104,38 @@ export function subscribeRoom(
   }
 }
 
+const inviteSubscriptions = new Map<string, {
+  channel: ReturnType<typeof supabase.channel>
+  listeners: Set<(event: RoomInviteRealtimeEvent) => void>
+  releaseTimer?: number
+}>()
+
 export function subscribeRoomInvites(
   userId: string,
   onChange: (event: RoomInviteRealtimeEvent) => void,
 ): () => void {
-  const channel = supabase.channel(`user:${userId}:room-invites`, {
-    config: { private: true },
-  })
-
-  channel
-    .on('broadcast', { event: 'room_invite_changed' }, ({ payload }) => {
-      onChange(payload as RoomInviteRealtimeEvent)
-    })
-    .subscribe()
+  let entry = inviteSubscriptions.get(userId)
+  if (!entry) {
+    const listeners = new Set<(event: RoomInviteRealtimeEvent) => void>()
+    const channel = supabase.channel(`user:${userId}:room-invites`, { config: { private: true } })
+    entry = { channel, listeners }
+    inviteSubscriptions.set(userId, entry)
+    channel.on('broadcast', { event: 'room_invite_changed' }, ({ payload }) => {
+      listeners.forEach((listener) => listener(payload as RoomInviteRealtimeEvent))
+    }).subscribe()
+  }
+  if (entry.releaseTimer !== undefined) window.clearTimeout(entry.releaseTimer)
+  const shared = entry
+  const listener = (event: RoomInviteRealtimeEvent) => onChange(event)
+  shared.listeners.add(listener)
 
   return () => {
-    void supabase.removeChannel(channel)
+    shared.listeners.delete(listener)
+    if (shared.listeners.size) return
+    shared.releaseTimer = window.setTimeout(() => {
+      if (shared.listeners.size) return
+      inviteSubscriptions.delete(userId)
+      void supabase.removeChannel(shared.channel)
+    }, 0)
   }
 }

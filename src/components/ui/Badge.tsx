@@ -17,12 +17,12 @@ interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
 
 const variantStyles: Record<BadgeVariant, string> = {
   default: 'bg-background-elevated text-foreground border-border',
-  success: 'bg-success-muted text-success border-success/25',
-  warning: 'bg-warning-muted text-warning border-warning/25',
-  danger: 'bg-danger-muted text-danger border-danger/25',
-  primary: 'bg-primary-muted text-primary border-primary/30',
-  gold: 'bg-secondary-muted text-secondary border-secondary/35',
-  online: 'bg-success-muted text-success border-success/25',
+  success: 'bg-success-muted text-[var(--color-success-text)] border-success/25',
+  warning: 'bg-warning-muted text-[var(--color-warning-text)] border-warning/25',
+  danger: 'bg-danger-muted text-[var(--color-danger-text)] border-danger/25',
+  primary: 'bg-primary-muted text-[var(--color-primary-text)] border-primary/30',
+  gold: 'bg-secondary-muted text-[var(--color-accent-text)] border-secondary/35',
+  online: 'bg-success-muted text-[var(--color-success-text)] border-success/25',
 }
 
 export function Badge({ children, variant = 'default', className, ...props }: BadgeProps) {

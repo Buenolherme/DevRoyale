@@ -24,7 +24,8 @@ export function NotFoundPage() {
 
       <Card variant="premium" className="mx-auto max-w-2xl text-center">
         <CardHeader>
-          <CardTitle className="text-2xl">Destino indisponível</CardTitle>
+          <span className="text-gradient-brand mb-4 block text-7xl font-black tracking-tight" aria-hidden="true">404</span>
+          <CardTitle className="text-2xl">Este caminho saiu da Arena</CardTitle>
           <CardDescription>
             O endereço pode ter mudado. Volte ao início ou entre diretamente na Batalha de Devs.
           </CardDescription>
@@ -32,10 +33,10 @@ export function NotFoundPage() {
         <CardContent>
           <div className="flex flex-col justify-center gap-3 sm:flex-row">
             <Link to={ROUTES.BATALHA_DEVS} className={getButtonClassName({ size: 'lg' })}>
-              Entrar na Batalha
+              Ir para Batalha
             </Link>
             <Link to={ROUTES.HOME} className={getButtonClassName({ variant: 'secondary', size: 'lg' })}>
-              Voltar ao início
+              Voltar para Home
             </Link>
           </div>
         </CardContent>

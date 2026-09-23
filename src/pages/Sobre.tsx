@@ -22,7 +22,6 @@ const currentCapabilities = [
 ]
 
 const roadmapItems = [
-  'Multiplayer competitivo',
   'Partidas Ranked e ranks',
   'Temporadas',
   'Modo espectador',
@@ -108,8 +107,9 @@ export function SobrePage() {
               <span>Proteções locais para testes competitivos</span>
             </div>
             <p>
-              A versão atual utiliza batalhas casuais com rival simulado. Multiplayer e
-              Ranked estão planejados para versões futuras e ainda não estão disponíveis.
+              O Casual local continua disponível com rival simulado. Na V2, você também
+              encontra amigos, salas e partida rápida. A avaliação das soluções online
+              depende da disponibilidade do avaliador da Arena; Ranked ainda não está disponível.
             </p>
           </div>
         </section>
@@ -203,8 +203,8 @@ export function SobrePage() {
             <strong>{DEVROYALE_STATUS}</strong>
           </div>
           <p>
-            A V1.5 é a versão atual da Arena, com Batalha casual simulada, Bug Arena,
-            Treinamento de Devs e progressão local disponíveis.
+            A base V1.5 mantém Batalha casual, Bug Arena, Treinamento e progressão local.
+            A V2 acrescenta conta, perfil público, amigos e lobbies multiplayer.
           </p>
           <div className="about-status__creator">
             <span>Criado por</span>

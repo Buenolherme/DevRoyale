@@ -1,5 +1,7 @@
-import { Suspense, useCallback, useState } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import { Outlet, useLocation } from 'react-router-dom'
+import { PageState } from '@/components/ui'
+import { ROUTES } from '@/routes/paths'
 import { hasSeenDevRoyaleOnboarding } from '@/config/appMeta'
 import { Header } from './Header'
 import { Footer } from './Footer'
@@ -7,23 +9,35 @@ import { FirstVisitOnboarding } from './FirstVisitOnboarding'
 
 function RouteLoadingFallback() {
   return (
-    <div
-      className="page-container flex min-h-[45vh] items-center justify-center"
-      role="status"
-      aria-live="polite"
-    >
-      <div className="text-center">
-        <span
-          className="mx-auto mb-4 block h-3 w-3 animate-pulse rounded-full bg-[var(--color-secondary)] shadow-[var(--shadow-glow-gold)]"
-          aria-hidden="true"
-        />
-        <p className="text-muted">Carregando arena...</p>
-      </div>
+    <div className="page-container route-loading">
+      <PageState loading title="Preparando sua próxima tela..." description="Só um instante para continuar na Arena." />
     </div>
   )
 }
 
+const pageTitles: Record<string, string> = {
+  [ROUTES.HOME]: 'Início', [ROUTES.LOGIN]: 'Entrar', [ROUTES.CADASTRO]: 'Criar conta',
+  [ROUTES.PERFIL]: 'Meu perfil', [ROUTES.AMIGOS]: 'Amigos', [ROUTES.MULTIPLAYER]: 'Multiplayer',
+  [ROUTES.BATALHA_DEVS]: 'Batalha de Devs', [ROUTES.AREA_ESTUDOS]: 'Treinamento',
+  [ROUTES.BUG_ARENA]: 'Bug Arena', [ROUTES.DASHBOARD]: 'Dashboard',
+  [ROUTES.SOBRE]: 'Sobre', [ROUTES.INTERVIEW_MODE]: 'Interview',
+}
+
 export function AppLayout() {
+  const location = useLocation()
+  const previousPath = useRef(location.pathname)
+  useEffect(() => {
+    const title = pageTitles[location.pathname]
+      ?? (location.pathname.startsWith('/u/') ? 'Perfil público'
+        : location.pathname.startsWith('/batalha/sala/') ? 'Lobby'
+          : location.pathname.startsWith('/batalha/match/') ? 'Arena multiplayer' : 'Página não encontrada')
+    document.title = `${title} · DevRoyale`
+    if (previousPath.current !== location.pathname && !location.hash) {
+      window.scrollTo({ top: 0, behavior: 'instant' })
+      document.getElementById('conteudo-principal')?.focus({ preventScroll: true })
+    }
+    previousPath.current = location.pathname
+  }, [location.pathname, location.hash])
   const [onboardingOpen, setOnboardingOpen] = useState(
     () => !hasSeenDevRoyaleOnboarding(),
   )

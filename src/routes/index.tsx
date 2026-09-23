@@ -18,6 +18,7 @@ import {
   MultiplayerPage,
   NotFoundPage,
   PerfilPage,
+  PublicProfilePage,
   SobrePage,
 } from './lazyPages'
 
@@ -27,6 +28,7 @@ export const router = createBrowserRouter([
     errorElement: <RouteErrorFallback />,
     children: [
       { path: ROUTES.HOME, element: <HomePage /> },
+      { path: ROUTES.PUBLIC_PROFILE, element: <PublicProfilePage /> },
       {
         path: ROUTES.LOGIN,
         element: (
@@ -79,6 +81,7 @@ export const router = createBrowserRouter([
       { path: '/batalha', element: <Navigate to={ROUTES.BATALHA_DEVS} replace /> },
       { path: ROUTES.AREA_ESTUDOS, element: <AreaEstudosPage /> },
       { path: '/estudos', element: <Navigate to={ROUTES.AREA_ESTUDOS} replace /> },
+      { path: '/treinamento/estudos', element: <Navigate to={ROUTES.AREA_ESTUDOS} replace /> },
       { path: ROUTES.BUG_ARENA, element: <BugArenaPage /> },
       { path: ROUTES.INTERVIEW_MODE, element: <InterviewModePage /> },
       { path: '/interview', element: <Navigate to={ROUTES.INTERVIEW_MODE} replace /> },
