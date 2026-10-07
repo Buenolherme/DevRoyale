@@ -16,6 +16,8 @@ import { useAuth } from '@/hooks'
 import { ROUTES } from '@/routes/paths'
 import type { ProgressActivity, ProgressActivityType } from '@/types'
 import { getKnowledgeLevelLabel, getMainLanguageLabel } from '@/types/auth'
+import { readTrainingWorkspace, recommendTraining, trainingUrl } from '@/utils/training'
+import { getCompletedStudyLessons, getStudyCompletionKey } from '@/utils/studyHistory'
 import {
   createDefaultProfilePreferences,
   getAchievementProgress,
@@ -150,17 +152,20 @@ export function DashboardPage() {
     progress.completedLessons.length +
     progress.completedBugs.length +
     progress.completedBattles.length
+  const nextTraining = recommendTraining(readTrainingWorkspace(user.id), new Set(getCompletedStudyLessons(user.id).map(getStudyCompletionKey)), user.knowledgeLevel === 'never' ? 'never-coded' : user.knowledgeLevel === 'beginner' ? 'basic' : user.knowledgeLevel)
 
   return (
     <div className="page-container">
       <PageHeader
         title={`Olá, ${user.name}!`}
-        description="Acompanhe sua evolução real em todos os modos do DevRoyale."
+        description="Progresso de treino neste navegador: aulas, bugs e batalhas casuais. XP local, sem ranking oficial ou sincronização entre dispositivos."
       >
         <Badge variant="gold" className="normal-case tracking-normal">
           Nível {progress.level}
         </Badge>
       </PageHeader>
+
+      {nextTraining && <Card variant="premium" className="mb-6"><CardHeader><CardTitle>Próximo objetivo de treino</CardTitle><CardDescription>{nextTraining.lesson.title} · {nextTraining.reason}</CardDescription></CardHeader><CardContent><Link to={trainingUrl(nextTraining.path, nextTraining.lesson)} className={getButtonClassName({ variant: 'secondary' })}>Abrir treinamento recomendado</Link></CardContent></Card>}
 
       <Card variant="premium" className="mb-6">
         <CardContent className="flex flex-wrap gap-3 py-4">

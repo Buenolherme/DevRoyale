@@ -1,178 +1,43 @@
 # DevRoyale
 
-Arena gamificada de programação focada em Batalhas de Devs.
+Arena de batalhas de programação com Treinamento de Devs e Bug Arena como apoio. A branch `v2` está em validação local (`2.0.0-rc.0`); isso não anuncia um release de produção.
 
-**Versão atual:** V1.5 (`1.5.0`)
+## O que existe
 
-**Status:** Release
+- Batalha Casual com rival simulado, validação e 56 desafios em Python, JavaScript, SQL e HTML/CSS.
+- Treinamento: 102 aulas em 32 módulos e 8 temas; 6 carreiras reutilizam módulos. Busca, favoritos, roadmap, projetos por checklist e 18 exercícios conceituais verificados localmente.
+- Bug Arena com 96 correções de referência, seleção por estudos, novo bug e treino infinito.
+- Supabase Auth, perfis, presença, amigos, salas, partida rápida, lobby e Arena multiplayer.
+- Edge Functions `judge-submission` e `reconcile-judge-submissions`, com Judge0 nativo/self-hosted e modo RapidAPI preparado. O caminho completo A × B ainda requer teste online.
+- XP, níveis, conclusões e conquistas de treino local ficam no navegador, separados por usuário. Não são placar competitivo oficial e não sincronizam entre dispositivos.
 
-O DevRoyale transforma prática de programação em uma arena competitiva. A Batalha de Devs é o modo principal; Bug Arena e Treinamento de Devs funcionam como preparação para desafios mais exigentes.
+## Executar
 
-## Principais funcionalidades
-
-- Batalha de Devs com rival simulado;
-- validação flexível, capaz de aceitar diferentes soluções corretas;
-- feedback contextual de quase acerto nos níveis iniciais, sem aceitar respostas aproximadas;
-- editor profissional com auto-close, indentação, Tab/Shift+Tab e histórico local de edição;
-- dicas progressivas;
-- solução de referência disponível após o encerramento da batalha;
-- integridade da Arena com avisos visuais e proteção contra paste;
-- Bug Arena;
-- Treinamento de Devs;
-- sistema central de XP e níveis;
-- conquistas e histórico de atividade;
-- Dashboard;
-- Perfil com avatar, bio e preferências por usuário;
-- Interview Mode;
-- onboarding de primeira entrada;
-- Light Mode e Dark Mode.
-
-## Catálogos da V1.5
-
-- 56 desafios de Batalha;
-- 96 bugs para correção;
-- 102 aulas distribuídas em 32 trilhas de treinamento;
-- Python, JavaScript, SQL e HTML/CSS na Arena.
-
-## Batalha de Devs
-
-A pessoa escolhe linguagem e dificuldade, entra no cockpit, resolve o objetivo no editor e executa a solução antes do rival simulado.
-
-Dificuldades disponíveis:
-
-- Nunca programei;
-- Básico;
-- Intermediário;
-- Avançado.
-
-A validação considera o resultado e as restrições explícitas do desafio. Soluções equivalentes podem vencer sem serem idênticas à referência. Diferenças apenas aproximadas de saída continuam incorretas.
-
-Uma vitória válida concede XP apenas na primeira conclusão do desafio. Derrota e repetição não concedem XP adicional.
-
-### Integridade da Arena
-
-Na batalha casual:
-
-- Nunca programei não registra advertências de saída;
-- Básico, Intermediário e Avançado registram saídas da Arena;
-- a primeira e a segunda saída exibem avisos visuais;
-- a terceira saída marca a integridade como comprometida;
-- não há voz, som, bloqueio temporário, derrota automática ou perda de XP.
-
-A arquitetura mantém regras configuráveis para uma futura Ranked, que ainda não está disponível. Nessa configuração futura, a segunda saída poderá bloquear o editor por quatro segundos e a terceira poderá encerrar a partida. A Ranked não usará voz ou áudio de integridade.
-
-## Bug Arena
-
-- filtros por linguagem, dificuldade e tamanho;
-- recomendação baseada no histórico de treinamento;
-- seleção de bug novo;
-- treino infinito;
-- prevenção de XP duplicado em bugs já concluídos.
-
-## Treinamento de Devs
-
-- 8 temas;
-- 4 níveis por tema;
-- 32 trilhas;
-- 102 aulas;
-- exemplos comentados, erros comuns e miniatividades;
-- recursos externos confiáveis;
-- histórico e continuidade de aprendizado;
-- progresso persistido somente para usuários autenticados localmente.
-
-## Progresso e perfil
-
-XP, níveis, conquistas, conclusões e atividades são centralizados e isolados por usuário. Dashboard e Perfil usam esses dados reais do armazenamento local.
-
-A autenticação atual é local. Avatar, bio, experiência e linguagem favorita também são persistidos por usuário.
-
-## Tecnologias
-
-- React;
-- TypeScript;
-- Vite;
-- React Router;
-- CSS;
-- Git/GitHub;
-- Vercel;
-- LocalStorage.
-
-## Execução local
-
-Instale as dependências:
+Requer Node.js compatível com Vite 8 e npm. Copie apenas os nomes de `.env.example` para `.env.local` e preencha `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY` com dados do seu projeto. A URL/chave pública não concedem acesso de administrador. Não coloque `service_role` ou credenciais Judge0 em `VITE_*`.
 
 ```bash
-npm install
-```
-
-Inicie o ambiente de desenvolvimento:
-
-```bash
+npm ci
 npm run dev
-```
-
-Gere a build de produção:
-
-```bash
-npm run build
-```
-
-Visualize a build localmente:
-
-```bash
-npm run preview
-```
-
-Execute o lint:
-
-```bash
+npm test
 npm run lint
+npm run build
+npx tsc --noEmit
+npm audit
 ```
 
-## Estrutura resumida
+`npm run preview` serve a build local. `npm test` usa apenas dados de teste em memória e valida catálogos, progresso, integridade e contratos das Edge Functions; não abre conexão com Supabase ou Judge0. Nenhum script aplica migrations.
 
-```text
-src/
-  assets/       Imagens e identidade visual
-  components/   Componentes da Arena e elementos reutilizáveis
-  config/       Metadados e regras configuráveis
-  contexts/     Autenticação e tema
-  data/         Catálogos de batalhas, bugs e aulas
-  hooks/        Integridade, dialogs e hooks de aplicação
-  pages/        Páginas principais
-  routes/       Rotas e proteção de acesso
-  styles/       Base visual, temas e estilos por página
-  utils/        Validação, progresso e persistência local
-```
+## Estrutura
 
-O `vercel.json` mantém o rewrite necessário para que rotas SPA sejam servidas pelo `index.html`.
+- `src/data/`: conteúdo de aulas, carreiras, projetos e desafios.
+- `src/pages/`, `src/components/`, `src/routes/`: interface, rotas e proteção de sessão.
+- `src/lib/`, `src/contexts/`, `src/utils/`: serviços, auth, validação e progresso local.
+- `supabase/migrations/`: schema e políticas; `supabase/functions/`: avaliação e reconciliação.
+- `scripts/`: verificações offline e geração de seed (a geração só deve ser executada conscientemente).
+- `docs/v2-finalization-review.md`: estado, fluxos, variáveis de ambiente, testes e limitações.
 
-## Limitações atuais
+## Limites atuais
 
-- multiplayer ainda não existe;
-- Ranked ainda não existe;
-- a batalha atual usa rival simulado;
-- autenticação e progresso usam armazenamento local;
-- não há sincronização entre dispositivos;
-- o backend competitivo fica para a V2.0;
-- Interview Mode é um treino local, sem IA integrada.
-
-## Roadmap V2.0
-
-- multiplayer;
-- matchmaking;
-- Ranked;
-- ranks;
-- temporadas;
-- chat;
-- modo espectador;
-- VIP;
-- monetização.
-
-O roadmap não possui datas públicas definidas.
-
-## Créditos
+O catálogo Casual e a Bug Arena usam validadores locais, não executam código arbitrário. A correção de bugs usa comparação conservadora com a referência e pode rejeitar uma solução equivalente. Projetos são checklist de autoavaliação. A V2 multiplayer depende de schema remoto, deploy das Edge Functions, secrets server-side e teste com dois usuários reais; as rotinas locais não comprovam isso. Ranked, MMR e novos modos competitivos não estão disponíveis.
 
 Criado por Guilherme Rodrigues.
-
-Instagram: [@buenolherme](https://www.instagram.com/buenolherme/)

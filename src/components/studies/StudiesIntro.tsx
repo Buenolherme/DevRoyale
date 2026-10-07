@@ -46,7 +46,7 @@ export function StudiesIntro({ isAuthenticated, scoutMessage }: StudiesIntroProp
           </div>
           <p className="study-hub-hero__storage">
             {isAuthenticated
-              ? 'Histórico permanente ativo para sua conta.'
+              ? 'Histórico local, separado por usuário neste navegador. Sem sincronização entre dispositivos.'
               : 'Você pode estudar sem login. Entre para salvar XP, nível e conquistas.'}
           </p>
         </div>

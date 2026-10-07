@@ -20,7 +20,7 @@ function response(body: Record<string, unknown>, status = 200) {
 }
 
 function friendlyError(error: unknown): { message: string; status: number } {
-  const raw = error instanceof Error ? error.message : String(error)
+  const raw = error instanceof Error ? error.message : typeof error === 'object' && error !== null && 'message' in error ? String(error.message) : String(error)
   const mappings: Array<[RegExp, string, number]> = [
     [/not_authenticated|Invalid JWT|Auth session missing/i, 'Sua sessão expirou. Entre novamente.', 401],
     [/match_not_found|round_not_active|match_not_active/, 'Esta rodada não está mais disponível.', 409],
@@ -71,7 +71,8 @@ Deno.serve(async (request: Request) => {
       return response({ error: 'Sua sessão expirou. Entre novamente.' }, 401)
     }
 
-    const body = await request.json() as unknown
+    let body: unknown
+    try { body = await request.json() } catch { return response({ error: 'O corpo da tentativa deve ser JSON válido.' }, 400) }
     if (!validRequest(body)) {
       return response({ error: 'Dados da tentativa inválidos ou código acima de 20 KB.' }, 400)
     }

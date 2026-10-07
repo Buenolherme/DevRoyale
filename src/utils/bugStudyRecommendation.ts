@@ -7,6 +7,7 @@ import type {
   StudyTopicId,
 } from '@/types'
 import { getStudyHistoryByUser } from './studyHistory'
+import { lessonPractice } from '@/data/trainingCatalog'
 
 export type BugTrainingCategory =
   | 'syntax'
@@ -89,8 +90,6 @@ const topicDefaults: Record<StudyTopicId, BugTrainingCategory[]> = {
   frontend: ['structure', 'styles', 'logic'],
   backend: ['functions', 'conditionals', 'logic'],
 }
-
-const difficultyOrder: BugDifficulty[] = ['never', 'basic', 'intermediate', 'advanced']
 
 function normalizeText(value: string): string {
   return value
@@ -247,42 +246,10 @@ export function findRecommendedBug(
   bugs: Bug[],
   recommendation: BugStudyRecommendation,
 ): Bug | null {
-  if (!bugs.length) return null
-
-  const sameLanguage = recommendation.bugLanguage
-    ? bugs.filter((bug) => bug.language === recommendation.bugLanguage)
-    : []
-  const candidates = sameLanguage.length ? sameLanguage : bugs
-
-  return candidates
-    .map((bug, index) => {
-      const searchableText = normalizeText(
-        [
-          bug.title,
-          bug.description,
-          bug.hint,
-          bug.explanation,
-          ...bug.topics,
-          ...bug.tags,
-          ...bug.bugExplanations,
-        ].join(' '),
-      )
-      const categoryScore = recommendation.categories.reduce(
-        (score, category) =>
-          score +
-          (categoryKeywords[category].some((keyword) => searchableText.includes(keyword)) ? 4 : 0),
-        0,
-      )
-      const difficultyDistance = Math.abs(
-        difficultyOrder.indexOf(bug.difficulty) -
-          difficultyOrder.indexOf(recommendation.bugDifficulty),
-      )
-
-      return {
-        bug,
-        index,
-        score: categoryScore + (difficultyDistance === 0 ? 8 : Math.max(0, 3 - difficultyDistance)),
-      }
-    })
-    .sort((left, right) => right.score - left.score || left.index - right.index)[0]?.bug ?? null
+  for (const lessonId of recommendation.completedLessonIds) {
+    const id = lessonPractice[lessonId]?.bugId
+    const bug = id ? bugs.find((entry) => entry.id === id) : null
+    if (bug) return bug
+  }
+  return null
 }

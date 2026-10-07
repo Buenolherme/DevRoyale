@@ -30,6 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [authState, setAuthState] = useState<AuthState>(INITIAL_AUTH_STATE)
   const hydrationIdRef = useRef(0)
   const mountedRef = useRef(true)
+  const profileRequests = useRef(new Map<string, ReturnType<typeof getProfile>>())
 
   const hydrateSession = useCallback(async (session: AuthState['session']) => {
     const hydrationId = ++hydrationIdRef.current
@@ -56,7 +57,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     let profile = null
     try {
-      profile = await getProfile(session.user.id)
+      const id = session.user.id
+      let pending = profileRequests.current.get(id)
+      if (!pending) {
+        pending = getProfile(id)
+        profileRequests.current.set(id, pending)
+        const remove = () => { profileRequests.current.delete(id) }
+        void pending.then(remove, remove)
+      }
+      profile = await pending
     } catch {
       // Uma falha de profile não invalida uma sessão Auth válida.
     }
@@ -75,17 +84,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     mountedRef.current = true
     let cancelled = false
+    let authEventSeen = false
 
     const restoreSession = async () => {
       try {
         const session = await getSession()
-        if (!cancelled) await hydrateSession(session)
+        if (!cancelled && !authEventSeen) await hydrateSession(session)
       } catch {
-        if (!cancelled) await hydrateSession(null)
+        if (!cancelled && !authEventSeen) await hydrateSession(null)
       }
     }
 
     const unsubscribe = observeAuthChanges((session) => {
+      authEventSeen = true
       // Evita chamadas Supabase dentro do callback síncrono de onAuthStateChange.
       queueMicrotask(() => {
         if (!cancelled) void hydrateSession(session)

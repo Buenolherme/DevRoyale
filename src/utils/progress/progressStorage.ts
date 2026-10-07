@@ -3,7 +3,7 @@ import type { UserProgress } from '@/types'
 export type UserProgressStorage = Record<string, UserProgress>
 
 export function hasPersistentProgressStorage(): boolean {
-  return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
+  try { return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined' } catch { return false }
 }
 
 export function readProgressStorage(storageKey: string): UserProgressStorage {

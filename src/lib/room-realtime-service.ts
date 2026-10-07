@@ -79,7 +79,7 @@ export function subscribeRoom(
           userId: user.id,
           username: user.username,
           connectedAt: new Date().toISOString(),
-        } satisfies RoomPresenceMetadata)
+        } satisfies RoomPresenceMetadata).catch(() => { if (!closed) callbacks.onConnectionChange(false) })
         return
       }
 
@@ -99,7 +99,7 @@ export function subscribeRoom(
       .untrack()
       .catch(() => undefined)
       .finally(() => {
-        void supabase.removeChannel(channel)
+        void supabase.removeChannel(channel).catch(() => undefined)
       })
   }
 }
@@ -135,7 +135,7 @@ export function subscribeRoomInvites(
     shared.releaseTimer = window.setTimeout(() => {
       if (shared.listeners.size) return
       inviteSubscriptions.delete(userId)
-      void supabase.removeChannel(shared.channel)
+      void supabase.removeChannel(shared.channel).catch(() => undefined)
     }, 0)
   }
 }

@@ -43,7 +43,7 @@ export function Select({
         aria-describedby={[describedBy, error && `${selectId}-error`].filter(Boolean).join(' ') || undefined}
         {...props}
       >
-        <option value="" disabled>{placeholder}</option>
+        {!options.some((option) => option.value === '') && <option value="" disabled>{placeholder}</option>}
         {options.map((opt) => (
           <option key={opt.value} value={opt.value}>
             {opt.label}

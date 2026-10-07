@@ -5,6 +5,7 @@ import type {
   BattleValidationStrategy,
 } from '@/types'
 import { battleModeRules, type BattleMode } from '@/config/battleModeRules'
+import { normalizePracticeSource } from './practiceSource'
 
 export type BattleValidationIssue =
   | 'format-mismatch'
@@ -146,21 +147,6 @@ function normalizeWhitespace(value: string): string {
     .replace(/[ \t]+/g, ' ')
     .replace(/\s*\n\s*/g, ' ')
     .replace(/\s+/g, ' ')
-}
-
-function normalizeHtmlCss(value: string): string {
-  return value
-    .replace(/>\s+</g, '><')
-    .replace(/>\s+/g, '>')
-    .replace(/\s+</g, '<')
-    .replace(/<\s+/g, '<')
-    .replace(/\s+>/g, '>')
-    .replace(/\s*=\s*/g, '=')
-    .replace(/\s*{\s*/g, '{')
-    .replace(/\s*}\s*/g, '}')
-    .replace(/\s*:\s*/g, ':')
-    .replace(/\s*;\s*/g, ';')
-    .replace(/\s*,\s*/g, ',')
 }
 
 function normalizeSearchText(value: string): string {
@@ -1248,11 +1234,7 @@ function validateMarkupSolution(
 }
 
 export function normalizeBattleAnswer(answer: string, language: BattleLanguage): string {
-  const withNormalizedQuotes = normalizeQuotes(answer)
-  const languageNormalized =
-    language === 'html-css' ? normalizeHtmlCss(withNormalizedQuotes) : withNormalizedQuotes
-
-  return normalizeWhitespace(languageNormalized)
+  return normalizePracticeSource(answer, language)
 }
 
 export function validateBattleSolution(

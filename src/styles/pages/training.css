@@ -1,0 +1,33 @@
+.training-explorer, .training-career, .training-course { display: grid; gap: 1rem; min-width: 0; }
+.training-toolbar { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 1rem; align-items: end; }
+.training-dimensions { display: flex; flex-wrap: wrap; gap: .75rem; }
+.training-courses { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
+.training-course { padding: 1.25rem; align-content: start; }
+.training-course p, .training-project p, .training-notice { color: var(--color-muted); line-height: 1.6; }
+.training-course h3, .training-project h3 { font-weight: 700; font-size: 1.1rem; }
+.training-course button { margin-top: auto; }
+.training-roadmap { display: grid; gap: .75rem; padding: 0; list-style: none; }
+.training-roadmap li { display: grid; grid-template-columns: 2rem minmax(0, 1fr) auto; gap: 1rem; align-items: center; padding: 1rem; border: 1px solid var(--color-border); border-radius: 1rem; background: var(--color-bg-elevated); }
+.training-roadmap li > span { color: var(--color-accent-text); font-weight: 800; }
+.training-roadmap h3 { font-weight: 700; margin-top: .4rem; }
+.training-roadmap p, .training-roadmap small { color: var(--color-muted); }
+.training-project, .training-concept { padding: 1.25rem; border: 1px solid var(--color-border); border-radius: 1rem; margin-top: 1rem; background: var(--color-bg-elevated); }
+.training-check { display: flex; align-items: flex-start; gap: .75rem; padding: .65rem 0; line-height: 1.5; cursor: pointer; }
+.training-check input { width: 1.15rem; height: 1.15rem; flex-shrink: 0; margin-top: .15rem; accent-color: var(--color-primary); }
+.training-check input:focus-visible { outline: 2px solid var(--color-accent-text); outline-offset: 3px; }
+.training-concept fieldset { margin: 1rem 0; }
+.training-concept legend { font-weight: 700; }
+.training-results { display: grid; gap: .6rem; }
+.training-result { display: grid; gap: .3rem; text-align: left; padding: 1rem; border: 1px solid var(--color-border); border-radius: .75rem; background: var(--color-bg-elevated); }
+.training-result span { color: var(--color-muted); font-size: .9rem; }
+.training-result:hover { border-color: var(--color-secondary); }
+.training-notice { padding: 1rem; border-left: 3px solid var(--color-secondary); }
+.onboarding-preferences { display: grid; gap: .75rem; margin-top: 1rem; text-align: left; }
+.onboarding-dialog { max-height: calc(100dvh - 2rem); overflow-y: auto; }
+@media (max-width: 1100px) { .training-courses { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) {
+  .training-toolbar, .training-courses { grid-template-columns: minmax(0, 1fr); }
+  .training-roadmap li { grid-template-columns: 1.5rem minmax(0, 1fr); }
+  .training-roadmap li > button { grid-column: 2; justify-self: start; }
+  .training-project { padding: 1rem; }
+}

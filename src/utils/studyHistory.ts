@@ -31,7 +31,7 @@ const studyLevelIds: StudyLevelId[] = [
 ]
 
 function hasPersistentStorage(): boolean {
-  return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
+  try { return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined' } catch { return false }
 }
 
 function isStudyTopicId(value: unknown): value is StudyTopicId {

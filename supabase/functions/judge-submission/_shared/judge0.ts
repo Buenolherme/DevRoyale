@@ -14,6 +14,8 @@ const MAX_POLL_ATTEMPTS = 24
 const CPU_TIME_LIMIT_SECONDS = 2
 const WALL_TIME_LIMIT_SECONDS = 4
 const MEMORY_LIMIT_KB = 128_000
+const REQUEST_TIMEOUT_MS = 8_000
+const POLL_DEADLINE_MS = 20_000
 
 function encodeBase64(value: string): string {
   const bytes = new TextEncoder().encode(value)
@@ -88,6 +90,7 @@ export class Judge0Provider implements CodeJudgeProvider {
       `${this.baseUrl}/submissions?base64_encoded=true&wait=false`,
       {
         method: 'POST',
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
         headers: this.headers(),
         body: JSON.stringify({
           language_id: this.languageIds[request.language],
@@ -110,10 +113,12 @@ export class Judge0Provider implements CodeJudgeProvider {
   }
 
   async getResult(token: string): Promise<JudgeExecutionResult> {
+    const deadline = Date.now() + POLL_DEADLINE_MS
     for (let attempt = 0; attempt < MAX_POLL_ATTEMPTS; attempt += 1) {
+      if (Date.now() >= deadline) break
       const response = await fetch(
         `${this.baseUrl}/submissions/${encodeURIComponent(token)}?base64_encoded=true&fields=token,status,stdout,stderr,compile_output,message,time,memory`,
-        { headers: this.headers() },
+        { headers: this.headers(), signal: AbortSignal.timeout(Math.min(REQUEST_TIMEOUT_MS, Math.max(1, deadline - Date.now()))) },
       )
       if (!response.ok) throw new Error(`judge_status_failed:${response.status}`)
 
@@ -150,8 +155,8 @@ export class Judge0Provider implements CodeJudgeProvider {
 
     return {
       token,
-      statusId: 5,
-      statusDescription: 'Time Limit Exceeded',
+      statusId: 13,
+      statusDescription: 'Judge queue timeout',
       stdout: '',
       stderr: '',
       compileOutput: '',

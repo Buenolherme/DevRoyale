@@ -49,7 +49,7 @@ export function BugScoutRecommendation({
               id="bug-study-recommendation-title"
               className="text-lg font-black tracking-tight text-foreground md:text-xl"
             >
-              Scout Mecânico analisou seu progresso
+              Scout Mecânico · próximo treino
             </h2>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
               {recommendation.scoutMessage}

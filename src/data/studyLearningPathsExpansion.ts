@@ -455,5 +455,14 @@ export function expandStudyLearningPaths(
     })
   })
 
-  return [...pathBySelection.values()]
+  const introductionOrder: Record<string, string[]> = {
+    'python:never-coded': ['python-never-coded-execution-order-v1', 'python-never-coded-print-values-v1', 'python-never-coded-values', 'python-never-coded-named-values-v1', 'python-never-coded-decisions'],
+    'logic:never-coded': ['logic-never-coded-inputs-outputs-v1', 'logic-never-coded-sequence', 'logic-never-coded-simple-variables-v1', 'logic-never-coded-first-decisions-v1', 'logic-never-coded-repetition'],
+    'javascript:basic': ['javascript-basic-functions', 'javascript-basic-branching-v1', 'javascript-basic-iteration-v1', 'javascript-basic-arrays', 'javascript-basic-array-tools-v1'],
+  }
+  return [...pathBySelection.values()].map((path) => {
+    const order = introductionOrder[`${path.topicId}:${path.levelId}`]
+    if (!order) return path
+    return { ...path, lessons: [...path.lessons].sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id)) }
+  })
 }

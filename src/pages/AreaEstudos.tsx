@@ -1,4 +1,9 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { TrainingExplorer, ProjectChecklist } from '@/components/studies/TrainingExplorer'
+import { LessonPractice } from '@/components/studies/LessonPractice'
+import { trainingProjects } from '@/data/trainingCatalog'
+import { modulePrerequisite, readTrainingWorkspace, recommendTraining, saveTrainingWorkspace, type TrainingWorkspace } from '@/utils/training'
 import {
   StudiesIntro,
   StudyPathSelector,
@@ -60,7 +65,7 @@ function getLessonCompletionKey(path: StudyLearningPath, lesson: StudyLesson): s
   })
 }
 
-export function AreaEstudosPage() {
+function AreaEstudosContent() {
   const { user, isAuthenticated } = useAuth()
   const currentUserId = user?.id ?? null
   const [historyState, setHistoryState] = useState<HistoryState>(() => ({
@@ -72,9 +77,11 @@ export function AreaEstudosPage() {
       ownerId: currentUserId,
       keys: new Set<string>(),
     }))
-  const [selectedTopicId, setSelectedTopicId] = useState<StudyTopicId | null>(null)
-  const [selectedLevelId, setSelectedLevelId] = useState<StudyLevelId | null>(null)
-  const [activeLessonId, setActiveLessonId] = useState<string | null>(null)
+  const [params, setParams] = useSearchParams()
+  const selectedTopicId = studyTopicOptions.find((topic) => topic.id === params.get('topic'))?.id ?? null
+  const selectedLevelId = studyLevelOptions.find((level) => level.id === params.get('level'))?.id ?? null
+  const activeLessonId = params.get('lesson')
+  const [workspace, setWorkspace] = useState(() => readTrainingWorkspace(currentUserId))
   const [feedbackMessage, setFeedbackMessage] = useState('')
   const [feedbackTone, setFeedbackTone] = useState<LessonFeedbackTone>('success')
 
@@ -137,27 +144,10 @@ export function AreaEstudosPage() {
   const continuePath = latestHistory
     ? getStudyLearningPath(latestHistory.topicId, latestHistory.levelId)
     : null
-  const continueLesson = continuePath
-    ? continuePath.lessons.find((lesson) => lesson.id === latestHistory?.lessonId) ?? null
-    : null
-  const continueCompletedCount = continuePath
-    ? continuePath.lessons.filter((lesson) =>
-        persistedCompletionKeys.has(getLessonCompletionKey(continuePath, lesson)),
-      ).length
-    : 0
-
-  const historyBasedRecommendation =
-    continuePath && continueCompletedCount < continuePath.lessons.length
-      ? continuePath
-      : latestHistory
-        ? studyLearningPaths.find((path) => path.topicId !== latestHistory.topicId)
-        : null
+  const declaredLevel = user?.knowledgeLevel === 'never' ? 'never-coded' : user?.knowledgeLevel === 'beginner' ? 'basic' : studyLevelOptions.find((level) => level.id === user?.knowledgeLevel)?.id
+  const recommendation = recommendTraining(workspace, completedKeys, declaredLevel)
   const recommendationPath =
-    activePath ??
-    (selectedTopicId
-      ? studyLearningPaths.find((path) => path.topicId === selectedTopicId)
-      : null) ??
-    historyBasedRecommendation ??
+    recommendation?.path ??
     studyLearningPaths[0]
   const recommendationTopic = studyTopicOptions.find(
     (topic) => topic.id === recommendationPath.topicId,
@@ -201,13 +191,35 @@ export function AreaEstudosPage() {
     setFeedbackTone('success')
   }
 
+  const updateWorkspace = (next: TrainingWorkspace) => {
+    setWorkspace(next)
+    if (!saveTrainingWorkspace(currentUserId, next)) {
+      setFeedbackMessage('Não foi possível salvar no navegador. Suas escolhas continuam nesta sessão.')
+      setFeedbackTone('error')
+    }
+  }
+
+  useEffect(() => {
+    const onStorage = () => {
+      setWorkspace(readTrainingWorkspace(currentUserId))
+      setHistoryState({ ownerId: currentUserId, records: getCompletedStudyLessons(currentUserId) })
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [currentUserId])
+
+  useEffect(() => {
+    if (activePath && activeLesson) {
+      saveTrainingWorkspace(currentUserId, { ...readTrainingWorkspace(currentUserId), visited: { pathId: activePath.id, lessonId: activeLesson.id } })
+    }
+  }, [activePath, activeLesson, currentUserId])
+
   const handleTopicSelect = (topicId: StudyTopicId) => {
     const nextPath = selectedLevelId
       ? getStudyLearningPath(topicId, selectedLevelId)
       : null
 
-    setSelectedTopicId(topicId)
-    setActiveLessonId(nextPath ? getFirstPendingLesson(nextPath).id : null)
+    setParams({ topic: topicId, ...(selectedLevelId ? { level: selectedLevelId } : {}), ...(nextPath ? { lesson: getFirstPendingLesson(nextPath).id } : {}) })
     clearFeedback()
   }
 
@@ -216,8 +228,7 @@ export function AreaEstudosPage() {
       ? getStudyLearningPath(selectedTopicId, levelId)
       : null
 
-    setSelectedLevelId(levelId)
-    setActiveLessonId(nextPath ? getFirstPendingLesson(nextPath).id : null)
+    setParams({ level: levelId, ...(selectedTopicId ? { topic: selectedTopicId } : {}), ...(nextPath ? { lesson: getFirstPendingLesson(nextPath).id } : {}) })
     clearFeedback()
   }
 
@@ -227,10 +238,10 @@ export function AreaEstudosPage() {
     )
     const lesson = preferredLesson ?? getFirstPendingLesson(path)
 
-    setSelectedTopicId(path.topicId)
-    setSelectedLevelId(path.levelId)
-    setActiveLessonId(lesson.id)
     clearFeedback()
+    setParams({ topic: path.topicId, level: path.levelId, lesson: lesson.id })
+    updateWorkspace({ ...workspace, visited: { pathId: path.id, lessonId: lesson.id } })
+    requestAnimationFrame(() => document.getElementById('active-path-title')?.focus())
   }
 
   const handleCompleteLesson = () => {
@@ -291,6 +302,7 @@ export function AreaEstudosPage() {
         )
 
     setHistoryState({ ownerId: currentUserId, records: result.history })
+    if (workspace.failure?.lessonId === activeLesson.id) updateWorkspace({ ...workspace, failure: null })
     const progressFeedback = !xpResult
       ? 'Aula concluída! Registrei seus pontos fortes e o próximo foco.'
       : xpResult.persisted
@@ -342,41 +354,7 @@ export function AreaEstudosPage() {
         </Card>
       </section>
 
-      {latestHistory && continuePath && continueLesson && (
-        <section className="study-hub-section" aria-labelledby="continue-learning-title">
-          <div className="study-hub-section__heading">
-            <div>
-              <span className="study-hub-eyebrow">Retome sem perder o contexto</span>
-              <h2 id="continue-learning-title">Continuar aprendendo</h2>
-            </div>
-            <Badge variant="success">
-              {continueCompletedCount}/{continuePath.lessons.length} aulas
-            </Badge>
-          </div>
-          <Card variant="premium" className="study-continue-card">
-            <div>
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="gold">{latestHistory.topicLabel}</Badge>
-                <Badge variant="default" className="normal-case tracking-normal">
-                  {latestHistory.levelLabel}
-                </Badge>
-              </div>
-              <h3>{continuePath.title}</h3>
-              <p>
-                Última aula: {continueLesson.title} · concluída em{' '}
-                {formatHistoryDate(latestHistory.completedAt)}.
-              </p>
-            </div>
-            <Button
-              type="button"
-              variant="gold"
-              onClick={() => openPath(continuePath)}
-            >
-              Continuar trilha
-            </Button>
-          </Card>
-        </section>
-      )}
+      <TrainingExplorer completed={completedKeys} workspace={workspace} latestPathId={continuePath?.id} onOpen={openPath} onWorkspace={updateWorkspace} />
 
       <StudyPathSelector
         selectedTopic={selectedTopic}
@@ -391,8 +369,11 @@ export function AreaEstudosPage() {
           <div className="study-hub-section__heading study-hub-section__heading--path">
             <div>
               <span className="study-hub-eyebrow">Trilha recomendada pelo Scout</span>
-              <h2 id="active-path-title">{activePath.title}</h2>
+              <h2 id="active-path-title" tabIndex={-1}>{activePath.title}</h2>
               <p>{activePath.description}</p>
+              <p>Pré-requisito recomendado: {modulePrerequisite(activePath)?.title ?? 'nenhum; comece com os exemplos'}. Você pode navegar livremente.</p>
+              {activePath.topicId === 'frontend' && <p>Para os exemplos de interface, conheça HTML/CSS e JavaScript (funções e Promises). Os trechos TSX são introduções a componentes, não um curso completo de React/TypeScript.</p>}
+              {activePath.topicId === 'backend' && <p>Os exemplos de APIs são recortes conceituais: pressupõem funções, HTTP e um servidor configurado. Não são aplicações completas para copiar e executar.</p>}
             </div>
             <div className="study-path-progress">
               <strong>
@@ -416,15 +397,14 @@ export function AreaEstudosPage() {
                     className={`study-lesson-nav__item focus-ring ${lessonIsActive ? 'is-active' : ''} ${lessonIsCompleted ? 'is-completed' : ''}`}
                     aria-current={lessonIsActive ? 'step' : undefined}
                     onClick={() => {
-                      setActiveLessonId(lesson.id)
-                      clearFeedback()
+                      openPath(activePath, lesson.id)
                     }}
                   >
                     <span className="study-lesson-nav__number">
                       {lessonIsCompleted ? '✓' : String(index + 1).padStart(2, '0')}
                     </span>
                     <span>
-                      <small>{lessonIsCompleted ? 'Concluída' : 'Pendente'}</small>
+                      <small>{lessonIsCompleted ? 'Concluída' : lessonIsActive ? 'Atual' : lesson.id === getFirstPendingLesson(activePath).id ? 'Recomendada' : 'Disponível'}</small>
                       <strong>{lesson.title}</strong>
                     </span>
                   </button>
@@ -448,7 +428,8 @@ export function AreaEstudosPage() {
                     {activeLessonCompleted && <Badge variant="success">Concluída</Badge>}
                   </div>
                   <h2>{activeLesson.title}</h2>
-                  <p>{activeLesson.shortDescription}</p>
+                  <p><strong>Objetivo:</strong> {activeLesson.shortDescription}</p>
+                  <Button size="sm" variant="secondary" aria-pressed={workspace.favorites.includes(activeLesson.id)} onClick={() => updateWorkspace({ ...workspace, favorites: workspace.favorites.includes(activeLesson.id) ? workspace.favorites.filter((id) => id !== activeLesson.id) : [...workspace.favorites, activeLesson.id] })}>{workspace.favorites.includes(activeLesson.id) ? 'Remover favorito' : 'Salvar favorito'}</Button>
                 </div>
                 <span className="study-lesson-card__topic-mark">
                   {topicMarks[activePath.topicId]}
@@ -489,7 +470,7 @@ export function AreaEstudosPage() {
                   <span className="study-content-block__label">Explicação linha por linha</span>
                   <div className="study-code-walkthrough">
                     {activeLesson.codeExample.lineByLine.map((line, index) => (
-                      <div key={`${activeLesson.id}-${line.line}`}>
+                      <div key={`${activeLesson.id}-${index}`}>
                         <span>{String(index + 1).padStart(2, '0')}</span>
                         <code>{line.line}</code>
                         <p>{line.explanation}</p>
@@ -511,6 +492,7 @@ export function AreaEstudosPage() {
                     <span className="study-content-block__label">Mini atividade</span>
                     <strong>{activeLesson.miniActivity.title}</strong>
                     <p>{activeLesson.miniActivity.instructions}</p>
+                    <strong>Resultado esperado · autoavaliação</strong>
                     <ul className="study-activity-criteria">
                       {activeLesson.miniActivity.successCriteria.map((criterion) => (
                         <li key={criterion}>{criterion}</li>
@@ -518,6 +500,13 @@ export function AreaEstudosPage() {
                     </ul>
                   </section>
                 </div>
+
+                <LessonPractice key={activeLesson.id} lessonId={activeLesson.id} />
+
+                <section className="study-content-block"><h3>Próximo passo</h3>
+                  <p>{activePath.lessons[activePath.lessons.indexOf(activeLesson) + 1]?.title ?? 'Revise o módulo e aplique os conceitos no projeto do curso.'}</p>
+                  {activePath.lessons[activePath.lessons.indexOf(activeLesson) + 1] && <Button variant="secondary" onClick={() => openPath(activePath, activePath.lessons[activePath.lessons.indexOf(activeLesson) + 1].id)}>Próxima aula</Button>}
+                </section>
 
                 <section className="study-content-block">
                   <span className="study-content-block__label">Materiais complementares</span>
@@ -574,10 +563,10 @@ export function AreaEstudosPage() {
 
                 <footer className="study-lesson-card__footer">
                   <div>
-                    <span>{isAuthenticated ? 'Histórico permanente' : 'Conclusão da sessão'}</span>
+                    <span>{isAuthenticated ? 'Histórico local por usuário' : 'Conclusão da sessão'}</span>
                     <p>
                       {isAuthenticated
-                        ? 'Tema, nível, data e focos serão vinculados à sua conta.'
+                        ? 'Tema, nível, data e focos ficam neste navegador, separados por usuário. Não há sincronização entre dispositivos.'
                         : 'Estude livremente. Entre para salvar XP, nível e conquistas.'}
                     </p>
                   </div>
@@ -594,6 +583,7 @@ export function AreaEstudosPage() {
               </div>
             </article>
           </div>
+          <ProjectChecklist id={`course:${activePath.topicId}`} project={trainingProjects[activePath.topicId]} workspace={workspace} onWorkspace={updateWorkspace} />
         </section>
       )}
 
@@ -617,13 +607,13 @@ export function AreaEstudosPage() {
                 </Badge>
               </div>
               <h3>{recommendationPath.title}</h3>
-              <p>{recommendationPath.description}</p>
+              <p>{recommendation?.reason ?? 'Você concluiu todas as aulas disponíveis. Escolha um projeto ou pratique na Arena.'}</p>
               <Button
                 type="button"
                 variant="secondary"
                 size="sm"
                 className="study-recommendation-card__action"
-                onClick={() => openPath(recommendationPath)}
+                onClick={() => openPath(recommendationPath, recommendation?.lesson.id)}
               >
                 Abrir recomendação
               </Button>
@@ -688,4 +678,9 @@ export function AreaEstudosPage() {
       )}
     </div>
   )
+}
+
+export function AreaEstudosPage() {
+  const { user } = useAuth()
+  return <AreaEstudosContent key={user?.id ?? 'guest'} />
 }

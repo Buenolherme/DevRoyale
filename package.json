@@ -1,13 +1,14 @@
 {
   "name": "devroyale",
   "private": true,
-  "version": "1.5.0",
+  "version": "2.0.0-rc.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "node scripts/check-product.mjs && node scripts/check-multiplayer-judge.mjs && node scripts/check-edge.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.3",

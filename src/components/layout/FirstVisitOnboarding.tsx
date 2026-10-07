@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { DEVROYALE_VERSION_LABEL, markDevRoyaleOnboardingSeen } from '@/config/appMeta'
 import { useDialogFocus } from '@/hooks'
 import { ROUTES } from '@/routes/paths'
-import { getButtonClassName, ModeIcon, type ModeIconName } from '@/components/ui'
+import { getButtonClassName, ModeIcon, Select, type ModeIconName } from '@/components/ui'
 
 interface FirstVisitOnboardingProps {
   open: boolean
@@ -21,25 +21,13 @@ const onboardingSteps: OnboardingStep[] = [
   {
     eyebrow: 'Passo 1',
     title: 'Entre na Arena',
-    description: 'Escolha sua linguagem e dificuldade para enfrentar desafios de programação.',
+    description: 'A Batalha de Devs é o centro do DevRoyale. Treinamento e Bug Arena ajudam você a chegar preparado. Se nunca programou, comece com calma: não há disputa obrigatória.',
     mode: 'battle',
   },
   {
     eyebrow: 'Passo 2',
-    title: 'Resolva o desafio',
-    description: 'Escreva sua solução no editor da Arena e execute o código.',
-    mode: 'battle',
-  },
-  {
-    eyebrow: 'Passo 3',
-    title: 'Evolua',
-    description: 'Vença batalhas, ganhe XP e desbloqueie conquistas.',
-    mode: 'battle',
-  },
-  {
-    eyebrow: 'Passo 4',
-    title: 'Prepare-se',
-    description: 'Use a Bug Arena e o Treinamento de Devs quando quiser reforçar suas habilidades.',
+    title: 'Escolha seu primeiro passo',
+    description: 'Estas escolhas apenas sugerem uma rota. Você pode explorar todos os modos e mudar o nível quando quiser.',
     mode: 'studies',
   },
 ]
@@ -49,6 +37,9 @@ export function FirstVisitOnboarding({ open, onClose }: FirstVisitOnboardingProp
   const dialogRef = useRef<HTMLElement>(null)
   const nextButtonRef = useRef<HTMLButtonElement>(null)
   const [stepIndex, setStepIndex] = useState(0)
+  const [experience, setExperience] = useState('never-coded')
+  const [goal, setGoal] = useState('learn')
+  const [language, setLanguage] = useState('python')
   const currentStep = onboardingSteps[stepIndex] ?? onboardingSteps[0]
   const isLastStep = stepIndex === onboardingSteps.length - 1
 
@@ -76,7 +67,10 @@ export function FirstVisitOnboarding({ open, onClose }: FirstVisitOnboardingProp
     markDevRoyaleOnboardingSeen()
     setStepIndex(0)
     onClose()
-    navigate(ROUTES.BATALHA_DEVS)
+    const target = experience === 'never-coded' || goal === 'learn'
+      ? `${ROUTES.AREA_ESTUDOS}?topic=${language}&level=${experience}`
+      : goal === 'bugs' ? ROUTES.BUG_ARENA : ROUTES.BATALHA_DEVS
+    navigate(target)
   }
 
   return (
@@ -104,6 +98,12 @@ export function FirstVisitOnboarding({ open, onClose }: FirstVisitOnboardingProp
           <span className="onboarding-dialog__eyebrow">{currentStep.eyebrow}</span>
           <h2 id="onboarding-title">{currentStep.title}</h2>
           <p id="onboarding-description">{currentStep.description}</p>
+          {isLastStep && <div className="onboarding-preferences">
+            <Select label="Experiência" value={experience} onChange={(e) => setExperience(e.target.value)} options={[{ value: 'never-coded', label: 'Nunca programei' }, { value: 'basic', label: 'Básico' }, { value: 'intermediate', label: 'Intermediário' }, { value: 'advanced', label: 'Avançado' }]} />
+            <Select label="Objetivo inicial" value={goal} onChange={(e) => setGoal(e.target.value)} options={[{ value: 'learn', label: 'Reforçar fundamentos' }, { value: 'bugs', label: 'Praticar correção de bugs' }, { value: 'battle', label: 'Entrar em batalha' }]} />
+            <Select label="Linguagem de interesse" value={language} onChange={(e) => setLanguage(e.target.value)} options={[{ value: 'python', label: 'Python' }, { value: 'javascript', label: 'JavaScript' }, { value: 'html-css', label: 'HTML/CSS' }, { value: 'sql', label: 'SQL' }]} />
+            <p>{experience === 'never-coded' ? 'Sua primeira rota será o treinamento introdutório, sem pressa ou alertas competitivos.' : 'Abra a rota sugerida e ajuste os filtros ao seu ritmo.'}</p>
+          </div>}
         </div>
 
         <div
@@ -141,7 +141,7 @@ export function FirstVisitOnboarding({ open, onClose }: FirstVisitOnboardingProp
             })}
             onClick={handlePrimaryAction}
           >
-            {isLastStep ? 'Entrar na Arena' : 'Continuar'}
+            {isLastStep ? 'Abrir rota sugerida' : 'Continuar'}
           </button>
         </div>
       </section>

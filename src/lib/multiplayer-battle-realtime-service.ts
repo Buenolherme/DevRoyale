@@ -53,7 +53,7 @@ export function subscribeToMultiplayerBattle(
     .subscribe((status) => {
       if (status === 'SUBSCRIBED') {
         callbacks.onConnectionChange(true)
-        void channel.track({ userId, connectedAt: new Date().toISOString() })
+        void channel.track({ userId, connectedAt: new Date().toISOString() }).catch(() => callbacks.onConnectionChange(false))
       } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
         callbacks.onConnectionChange(false)
       }
@@ -61,8 +61,7 @@ export function subscribeToMultiplayerBattle(
 
   return () => {
     callbacks.onConnectionChange(false)
-    void channel.untrack().finally(() => {
-      void supabase.removeChannel(channel)
-    })
+    const remove = () => { void supabase.removeChannel(channel).catch(() => undefined) }
+    void channel.untrack().then(remove, remove)
   }
 }

@@ -38,14 +38,6 @@ function normalizeNearMiss(value: string): string {
     .replace(/[\s\p{P}]+/gu, '')
 }
 
-function safeDiagnostic(result: JudgeExecutionResult): string {
-  return (result.compileOutput || result.stderr || result.message)
-    .split('\n')
-    .filter((line) => !line.includes('__devroyale'))
-    .join('\n')
-    .slice(0, 1500)
-}
-
 export function mapExecutionFailure(result: JudgeExecutionResult): ValidationOutcome | null {
   if (result.statusId === 3) return null
   if (result.statusId === 5) {
@@ -54,13 +46,13 @@ export function mapExecutionFailure(result: JudgeExecutionResult): ValidationOut
   if (result.statusId === 6) {
     return {
       status: 'compile_error',
-      message: safeDiagnostic(result) || 'O código não pôde ser compilado.',
+      message: 'O código não pôde ser compilado. Revise a sintaxe da solução.',
     }
   }
   if (result.statusId >= 7 && result.statusId <= 12) {
     return {
       status: 'runtime_error',
-      message: safeDiagnostic(result) || 'O código encontrou um erro durante a execução.',
+      message: 'O código encontrou um erro durante a execução. Revise os tipos e casos de limite.',
     }
   }
   return {
@@ -264,7 +256,8 @@ const HTML_SECURITY_RULES = [
 ]
 
 export function validateHtmlCss(source: string, config: ValidatorConfig = {}): ValidationOutcome {
-  const securitySource = normalizeHtmlForSecurity(source)
+  const markup = source.replace(/<!--[\s\S]*?-->/g, '').replace(/\/\*[\s\S]*?\*\//g, '')
+  const securitySource = normalizeHtmlForSecurity(markup)
   const forbidden = [...HTML_SECURITY_RULES, ...(config.forbidden ?? [])]
     .find((rule) => matchesAny(securitySource, rule.anyOf))
   if (forbidden) {
@@ -274,7 +267,7 @@ export function validateHtmlCss(source: string, config: ValidatorConfig = {}): V
     }
   }
 
-  const missing = config.required?.find((rule) => !matchesAny(source, rule.anyOf))
+  const missing = config.required?.find((rule) => !matchesAny(markup, rule.anyOf))
   if (missing) {
     return {
       status: 'wrong_answer',

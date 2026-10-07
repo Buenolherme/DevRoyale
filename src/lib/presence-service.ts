@@ -119,7 +119,7 @@ export function connectPresence(
       .untrack()
       .catch(() => undefined)
       .finally(() => {
-        void supabase.removeChannel(channel)
+        void supabase.removeChannel(channel).catch(() => undefined)
       })
   }
 }

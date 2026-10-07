@@ -1,4 +1,6 @@
 import { useMemo, useState, type ChangeEvent } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { recordPracticeFailure } from '@/utils/training'
 import {
   BugFilters,
   BugScoutRecommendation,
@@ -197,7 +199,7 @@ function pickRandomBug(bugs: Bug[]): Bug | null {
   return bugs[Math.floor(Math.random() * bugs.length)] ?? null
 }
 
-export function BugArenaPage() {
+function BugArenaContent({ requestedBugId }: { requestedBugId: string | null }) {
   const { user, isAuthenticated } = useAuth()
   const [initialArenaState] = useState(() => {
     const progress = getBugProgress(user?.id)
@@ -206,7 +208,7 @@ export function BugArenaPage() {
       : []
 
     return {
-      bug: findFirstMatchingBug(firstBug.language, firstBug.difficulty, 'random', completedBugIds),
+      bug: mockBugs.find((bug) => bug.id === requestedBugId) ?? findFirstMatchingBug(firstBug.language, firstBug.difficulty, 'random', completedBugIds),
       progress,
     }
   })
@@ -315,7 +317,7 @@ export function BugArenaPage() {
     if (!studyRecommendation.hasHistory || !recommendedBug) {
       setRecommendationMode('study')
       setRecommendationFeedback(
-        'Você ainda não tem histórico de estudos. Use os filtros abaixo ou escolha um bug novo aleatório.',
+        studyRecommendation.hasHistory ? 'Ainda não existe um bug mapeado às suas aulas concluídas. Use os filtros ou escolha um bug novo aleatório.' : 'Você ainda não tem histórico de estudos. Use os filtros abaixo ou escolha um bug novo aleatório.',
       )
       return
     }
@@ -328,7 +330,7 @@ export function BugArenaPage() {
     loadBug(recommendedNewBug)
     setRecommendationMode('study')
     setRecommendationFeedback(
-      `Recomendação aplicada: ${languageLabel[recommendedNewBug.language]}, ${difficultyLabel[recommendedNewBug.difficulty]}. Essa seleção permanece ativa até você escolher outro filtro ou modo.`,
+      `Recomendação aplicada: ${languageLabel[recommendedNewBug.language]}, ${difficultyLabel[recommendedNewBug.difficulty]}. ${fixedBugIds.includes(recommendedNewBug.id) ? 'Todos os bugs mapeados já foram concluídos: revisão sem XP extra.' : 'Bug ainda não concluído, mapeado a uma aula do seu histórico.'}`,
     )
   }
 
@@ -374,11 +376,12 @@ export function BugArenaPage() {
     const isCorrect = validateBugFix(code, currentBug.expectedFix, currentBug.language)
 
     if (!isCorrect) {
+      recordPracticeFailure(user?.id, 'bug', currentBug.id)
       setResult({
         status: 'incorrect',
-        message: 'Quase. Tem pelo menos um bug escondido ainda.',
+        message: 'A correção ainda não corresponde à referência. Revise o objetivo e preserve os trechos que não precisam mudar.',
       })
-      setRecommendationFeedback('Quase. Tem pelo menos um bug escondido ainda.')
+      setRecommendationFeedback('A comparação é local e não executa o código. Soluções equivalentes podem exigir ajuste ao formato da referência.')
       return
     }
 
@@ -717,4 +720,10 @@ export function BugArenaPage() {
       </div>
     </div>
   )
+}
+
+export function BugArenaPage() {
+  const [params] = useSearchParams()
+  const { user } = useAuth()
+  return <BugArenaContent key={`${user?.id ?? 'guest'}:${params.get('bug') ?? ''}`} requestedBugId={params.get('bug')} />
 }

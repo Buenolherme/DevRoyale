@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { recordPracticeFailure } from '@/utils/training'
 import {
   BattleCountdown,
   BattleEditor,
@@ -146,12 +147,13 @@ function getRivalStatus(progress: number): string {
   return rivalStatusSteps.find((step) => progress >= step.progress)?.label ?? 'Analisando...'
 }
 
-export function BatalhaDevsPage() {
+function BatalhaDevsContent({ requestedChallengeId }: { requestedChallengeId: string | null }) {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const [language, setLanguage] = useState<BattleLanguage>(initialLanguage)
-  const [difficulty, setDifficulty] = useState<BattleDifficulty>(initialDifficulty)
-  const [challengeId, setChallengeId] = useState(initialChallenge.id)
+  const requestedChallenge = mockBattleChallenges.find((challenge) => challenge.id === requestedChallengeId) ?? initialChallenge
+  const [language, setLanguage] = useState<BattleLanguage>(requestedChallenge.language)
+  const [difficulty, setDifficulty] = useState<BattleDifficulty>(requestedChallenge.difficulty)
+  const [challengeId, setChallengeId] = useState(requestedChallenge.id)
   const [code, setCode] = useState('')
   const codeRef = useRef('')
   const [result, setResult] = useState<BattleResult | null>(null)
@@ -164,7 +166,7 @@ export function BatalhaDevsPage() {
     outcome: 'active',
   })
   const [battleDuration, setBattleDuration] = useState(
-    rivalDurationByDifficulty[initialChallenge.difficulty],
+    rivalDurationByDifficulty[requestedChallenge.difficulty],
   )
   const [battleRunId, setBattleRunId] = useState(0)
   const [problemReportOpen, setProblemReportOpen] = useState(false)
@@ -388,6 +390,7 @@ export function BatalhaDevsPage() {
     )
 
     if (!validation.isValid) {
+      recordPracticeFailure(user?.id, 'battle', currentChallenge.id)
       setResult({
         status: 'incorrect',
         message: validation.message ?? 'Revise sua resposta e tente novamente.',
@@ -814,4 +817,10 @@ export function BatalhaDevsPage() {
       </div>}
     </div>
   )
+}
+
+export function BatalhaDevsPage() {
+  const [params] = useSearchParams()
+  const { user } = useAuth()
+  return <BatalhaDevsContent key={`${user?.id ?? 'guest'}:${params.get('challenge') ?? ''}`} requestedChallengeId={params.get('challenge')} />
 }
