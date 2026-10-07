@@ -34,10 +34,12 @@ function errorMessage(error: unknown) {
 async function finalize(
   admin: SupabaseClient,
   submissionId: string,
+  workerId: string,
   outcome: ValidationOutcome,
 ) {
   const { error } = await admin.rpc('finalize_multiplayer_submission_internal', {
     p_submission_id: submissionId,
+    p_worker_id: workerId,
     p_status: outcome.status,
     p_public_message: outcome.message,
     p_stdout: outcome.stdout ?? null,
@@ -96,8 +98,9 @@ async function recordWorkerError(
 export async function finalizeSubmissionAsInternalError(
   admin: SupabaseClient,
   submissionId: string,
+  workerId: string,
 ) {
-  await finalize(admin, submissionId, {
+  await finalize(admin, submissionId, workerId, {
     status: 'internal_error',
     message: 'O avaliador da Arena está temporariamente indisponível.',
   })
@@ -140,11 +143,11 @@ export async function processSubmission(
           payload.mode,
         )
         if (outcome.status !== 'accepted') {
-          await finalize(admin, submissionId, outcome)
+          await finalize(admin, submissionId, workerId, outcome)
           return 'processed' as const
         }
       }
-      await finalize(admin, submissionId, sanitizeSubmissionOutcome({
+      await finalize(admin, submissionId, workerId, sanitizeSubmissionOutcome({
         status: 'accepted',
         message: payload.mode === 'run' ? 'Estrutura pública validada.' : 'Solução aceita.',
       }, payload.mode))
@@ -181,19 +184,19 @@ export async function processSubmission(
       resumeToken = null
 
       if (outcome.status !== 'accepted') {
-        await finalize(admin, submissionId, outcome)
+        await finalize(admin, submissionId, workerId, outcome)
         return 'processed' as const
       }
     }
 
-    await finalize(admin, submissionId, {
+    await finalize(admin, submissionId, workerId, {
       ...lastAccepted,
       message: payload.mode === 'run' ? 'Testes públicos concluídos.' : 'Solução aceita.',
     })
     return 'processed' as const
   } catch (processingError) {
     try {
-      await finalizeSubmissionAsInternalError(admin, submissionId)
+      await finalizeSubmissionAsInternalError(admin, submissionId, workerId)
     } catch (finalizationError) {
       try {
         await recordWorkerError(

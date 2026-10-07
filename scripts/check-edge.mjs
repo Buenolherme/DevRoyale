@@ -48,15 +48,17 @@ const admin = { rpc: async (name, params) => {
   rpcCalls.push({ name, params })
   return { data: name === 'acquire_multiplayer_submission_lease_internal' ? lease : name === 'get_multiplayer_judge_payload_internal' ? payload : null, error: null }
 } }
-assert.equal(await processSubmission(admin, 'fixture'), 'processed')
+const testWorkerId = '00000000-0000-4000-8000-000000000010'
+assert.equal(await processSubmission(admin, 'fixture', { workerId: testWorkerId }), 'processed')
 const finalized = rpcCalls.find((call) => call.name === 'finalize_multiplayer_submission_internal')
 assert.equal(finalized.params.p_status, 'accepted')
+assert.equal(finalized.params.p_worker_id, testWorkerId)
 assert.equal(finalized.params.p_stdout, null)
 assert(!JSON.stringify(finalized.params).includes('private-rule'))
 assert.equal(await processSubmission({ rpc: async () => ({ data: null, error: null }) }, 'busy'), 'busy')
 payload = { ...payload, tests: [] }
 rpcCalls = []
-assert.equal(await processSubmission(admin, 'fixture'), 'failed')
+assert.equal(await processSubmission(admin, 'fixture', { workerId: testWorkerId }), 'failed')
 assert.equal(rpcCalls.at(-1).params.p_status, 'internal_error')
 
 let jobs = 0

@@ -121,6 +121,7 @@ set local role authenticated;
 select set_config('request.jwt.claim.sub', 'UUID_A', true);
 select public.finalize_multiplayer_submission_internal(
   'SUBMISSION_ID'::uuid,
+  'WORKER_ID'::uuid,
   'accepted',
   'spoof',
   null,

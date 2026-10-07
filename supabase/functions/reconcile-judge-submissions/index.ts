@@ -44,7 +44,7 @@ Deno.serve(async (request: Request) => {
       if (!lease) break
 
       if (lease.exhausted) {
-        await finalizeSubmissionAsInternalError(admin, lease.submissionId)
+        await finalizeSubmissionAsInternalError(admin, lease.submissionId, workerId)
         results.push({ submissionId: lease.submissionId, result: 'recovery_exhausted' })
         continue
       }
