@@ -9,6 +9,7 @@ const root = fileURLToPath(new URL('../', import.meta.url))
 const migrationDir = path.join(root, 'supabase/migrations')
 const testDir = path.join(root, 'supabase/tests/room_host_transfer')
 const fix = '20261013000000_fix_leave_room_host_transfer.sql'
+const readyFix = '20261013010000_fix_set_room_ready_status_type.sql'
 // Explicit local transport: never use the active Docker context or a remote host.
 const host = process.platform === 'win32'
   ? 'npipe:////./pipe/dockerDesktopLinuxEngine'
@@ -56,24 +57,30 @@ try {
   function runFile(file, variables) {
     const result = sql(readFileSync(file, 'utf8'), variables)
     for (const line of result.split(/\r?\n/)) {
-      if (line.startsWith('PASS:') || line.startsWith('KNOWN ISSUE:')) console.log(line)
+      if (line.startsWith('PASS:')) console.log(line)
     }
   }
 
   runFile(path.join(testDir, 'bootstrap.sql'))
   const migrations = readdirSync(migrationDir).filter(name => name.endsWith('.sql')).sort()
   assert(migrations.includes(fix), 'Host-transfer migration is missing')
+  assert(migrations.includes(readyFix), 'Ready-status migration is missing')
   for (const name of migrations.filter(name => name < fix)) {
     runFile(path.join(migrationDir, name))
   }
   // Reproduce both the CURRENT_ROLE name collision and the unique-index defect.
   runFile(path.join(testDir, 'regression.sql'), ['-v', 'expect_bug=true'])
-  for (const name of migrations.filter(name => name >= fix)) {
+  for (const name of migrations.filter(name => name >= fix && name < readyFix)) {
     runFile(path.join(migrationDir, name))
   }
+  runFile(path.join(testDir, 'ready.sql'), ['-v', 'expect_bug=true'])
+  for (const name of migrations.filter(name => name >= readyFix)) {
+    runFile(path.join(migrationDir, name))
+  }
+  runFile(path.join(testDir, 'ready.sql'), ['-v', 'expect_bug=false'])
   runFile(path.join(testDir, 'regression.sql'), ['-v', 'expect_bug=false'])
   runFile(path.join(testDir, 'concurrency.sql'))
-  console.log('PASS: PostgreSQL host-transfer regression suite (isolated container)')
+  console.log('PASS: PostgreSQL ready-status and host-transfer regression suites (isolated container)')
 } catch (error) {
   console.error('PostgreSQL regression suite FAILED or could not run; this is NOT a passing database check.')
   console.error('Requires a running local Docker engine and an existing postgres:17 image. No image is downloaded automatically.')

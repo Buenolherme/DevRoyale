@@ -102,30 +102,6 @@ $$;
 \echo PASS: renaming alone reproduces room_members_one_host_per_room_idx; failed call rolls back
 \else
 
--- Existing, separate defect: set_room_ready's CASE returns text, not room_status.
--- Check the actual RPC and report this explicitly; lobby fixtures below use SQL.
-savepoint ready_defect;
-create temporary table ready_probe (broken boolean);
-do $$
-declare room uuid := pg_temp.make_room();
-  observed_state text;
-begin
-  begin
-    perform pg_temp.call_as('00000000-0000-0000-0000-000000000001',
-      format('select public.set_room_ready(%L, true)', room));
-  exception when datatype_mismatch then observed_state := sqlstate;
-  end;
-  insert into ready_probe values (coalesce(observed_state = '42804', false));
-end;
-$$;
-select broken as ready_broken from ready_probe \gset
-\if :ready_broken
-\echo KNOWN ISSUE: set_room_ready fails with SQLSTATE 42804; ready states below are SQL fixtures, not successful ready RPCs
-\else
-\echo PASS: set_room_ready RPC succeeds (lobby-state tests still use explicit SQL fixtures)
-\endif
-rollback to ready_defect;
-
 -- Host departure must work in all lobby states, preserving exactly the successor.
 savepoint scenario;
 do $$
@@ -140,8 +116,8 @@ begin
     perform pg_temp.call_as(old_host, format('select public.send_room_invite(%L, %L)',
       room, '00000000-0000-0000-0000-000000000003'));
     if lobby_state <> 'waiting' then
-      update public.room_members set ready = true where room_id = room;
-      update public.rooms set status = 'ready' where id = room;
+      perform pg_temp.call_as(old_host, format('select public.set_room_ready(%L, true)', room));
+      perform pg_temp.call_as(successor, format('select public.set_room_ready(%L, true)', room));
     end if;
     if lobby_state = 'starting' then
       perform pg_temp.call_as(old_host, format('select public.start_room_countdown(%L)', room));
@@ -189,8 +165,8 @@ begin
   perform pg_temp.call_as(c, format('select public.accept_room_invite(%L)', new_invite));
   perform pg_temp.check_true((select status = 'accepted' from public.room_invites where id = new_invite),
     'successor invite can be accepted');
-  update public.room_members set ready = true where room_id = room;
-  update public.rooms set status = 'ready' where id = room;
+  perform pg_temp.call_as(b, format('select public.set_room_ready(%L, true)', room));
+  perform pg_temp.call_as(c, format('select public.set_room_ready(%L, true)', room));
   perform pg_temp.call_as(b, format('select public.start_room_countdown(%L)', room));
   perform pg_temp.check_true((select status = 'starting' and countdown_started_at is not null
     from public.rooms where id = room), 'successor can start countdown');
@@ -210,7 +186,7 @@ begin
     'accepted invitation history preserved');
 end;
 $$;
-\echo PASS: new host permissions, old host denial, invite acceptance, kick, ready reset, countdown from fixture, last-player exit
+\echo PASS: new host permissions, old host denial, invite acceptance, kick, ready RPC/reset, countdown, last-player exit
 rollback to scenario;
 
 savepoint scenario;
@@ -222,8 +198,8 @@ declare
 begin
   perform pg_temp.call_as(a, format('select public.send_room_invite(%L, %L)', room,
     '00000000-0000-0000-0000-000000000003'));
-  update public.room_members set ready = true where room_id = room;
-  update public.rooms set status = 'ready' where id = room;
+  perform pg_temp.call_as(a, format('select public.set_room_ready(%L, true)', room));
+  perform pg_temp.call_as(b, format('select public.set_room_ready(%L, true)', room));
   perform pg_temp.call_as(a, format('select public.start_room_countdown(%L)', room));
   perform pg_temp.call_as(b, format('select public.leave_room(%L)', room));
   perform pg_temp.check_true((select count(*) = 1 and bool_and(user_id = a and role = 'host' and not ready)
