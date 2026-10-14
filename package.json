@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "node scripts/check-product.mjs && node scripts/check-multiplayer-judge.mjs && node scripts/check-edge.mjs"
+    "test": "node scripts/check-product.mjs && node scripts/check-multiplayer-judge.mjs && node scripts/check-edge.mjs",
+    "test:rooms:postgres": "node scripts/check-room-host-transfer.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.3",
