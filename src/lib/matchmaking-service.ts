@@ -32,6 +32,7 @@ function errorMessage(error: unknown): string {
 function matchmakingError(error: unknown): MatchmakingServiceError {
   const message = errorMessage(error)
   const mappings: Array<[RegExp, string, string]> = [
+    [/challenge_pool_unavailable/, 'Não há desafios disponíveis para esta linguagem e dificuldade. Cancele a busca para escolher outra combinação ou tente mais tarde.', 'POOL_UNAVAILABLE'],
     [/not_authenticated/, 'Entre na sua conta para buscar uma partida.', 'NOT_AUTHENTICATED'],
     [/active_room_blocks_queue/, 'Saia da sala atual antes de buscar outra partida.', 'ACTIVE_ROOM'],
     [/already_searching/, 'Uma busca já está ativa em outra aba.', 'ALREADY_SEARCHING'],

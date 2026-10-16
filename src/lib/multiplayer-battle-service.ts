@@ -17,6 +17,8 @@ export type MultiplayerBattleErrorCode =
   | 'RATE_LIMITED'
   | 'SOURCE_TOO_LARGE'
   | 'JUDGE_UNAVAILABLE'
+  | 'CHALLENGE_UNAVAILABLE'
+  | 'POOL_UNAVAILABLE'
   | 'NETWORK'
   | 'UNEXPECTED'
 
@@ -41,6 +43,8 @@ function errorMessage(error: unknown): string {
 function battleError(error: unknown): MultiplayerBattleServiceError {
   const message = errorMessage(error)
   const mappings: Array<[RegExp, string, MultiplayerBattleErrorCode]> = [
+    [/challenge_pool_unavailable|no_multiplayer_challenge/, 'Não há desafios disponíveis para esta linguagem e dificuldade. Escolha outra combinação ou tente mais tarde.', 'POOL_UNAVAILABLE'],
+    [/challenge_unavailable|desafio indisponível/i, 'Esta partida contém um desafio indisponível. Encerre-a sem vencedor para jogar novamente.', 'CHALLENGE_UNAVAILABLE'],
     [/not_authenticated|session.*expir/i, 'Sua sessão expirou. Entre novamente.', 'NOT_AUTHENTICATED'],
     [/match_not_found|round_not_found/, 'Esta batalha não foi encontrada.', 'NOT_FOUND'],
     [/match_not_active|round_not_active|activation_unavailable|countdown_not_finished|rodada.*não.*disponível/i, 'Esta rodada não está disponível agora.', 'NOT_ACTIVE'],
@@ -151,6 +155,14 @@ export function submitCode(state: MultiplayerMatchState, sourceCode: string) {
 
 export async function surrender(matchId: string): Promise<DatabaseMultiplayerMatch> {
   const { data, error } = await supabase.rpc('surrender_multiplayer_match', {
+    p_match_id: matchId,
+  })
+  if (error) throw battleError(error)
+  return data
+}
+
+export async function cancelUnavailableMatch(matchId: string): Promise<DatabaseMultiplayerMatch> {
+  const { data, error } = await supabase.rpc('cancel_unavailable_multiplayer_match', {
     p_match_id: matchId,
   })
   if (error) throw battleError(error)

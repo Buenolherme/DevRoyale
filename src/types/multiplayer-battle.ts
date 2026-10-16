@@ -163,6 +163,8 @@ export interface MultiplayerSubmissionResult {
 }
 
 export interface MultiplayerMatchState {
+  evaluationMode?: 'demo' | 'competitive'
+  unavailable?: boolean
   match: MultiplayerMatch
   players: MultiplayerMatchPlayer[]
   round: MultiplayerRound

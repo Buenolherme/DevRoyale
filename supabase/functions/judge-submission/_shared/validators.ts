@@ -10,6 +10,16 @@ import type {
 
 const SQL_FORBIDDEN = /\b(?:attach|detach|pragma|vacuum|load_extension|drop|alter)\b/i
 
+export function assertSupportedJudgePayload(payload: JudgePayload): void {
+  // Judge0 stdout belongs to the submitted program. In-process counters, closures
+  // and built-ins cannot attest how often/in parallel callbacks actually ran.
+  // Suspend instrumented harnesses until measurements have a trusted boundary.
+  // Unknown harnesses must not silently fall back to ordinary return-value tests.
+  if (payload.judgeConfig?.harness !== undefined) {
+    throw new Error('trusted_instrumentation_unavailable')
+  }
+}
+
 function canonicalize(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(canonicalize)
   if (value && typeof value === 'object') {
@@ -65,6 +75,7 @@ export function buildExecutionRequest(
   payload: JudgePayload,
   test: ChallengeTest,
 ): JudgeExecutionRequest {
+  assertSupportedJudgePayload(payload)
   if (payload.validationType === 'program_output') {
     return {
       language: payload.language === 'javascript' ? 'javascript' : 'python',
@@ -79,22 +90,6 @@ export function buildExecutionRequest(
       throw new Error('function_name_invalid')
     }
     const args = Array.isArray(test.input.args) ? test.input.args : []
-
-    if (payload.judgeConfig.harness === 'javascript_concurrency_queue') {
-      const tasks = Array.isArray(test.input.tasks) ? test.input.tasks : []
-      return {
-        language: 'javascript',
-        sourceCode: `${payload.sourceCode}\n\nconst __devroyaleTaskSpecs = ${JSON.stringify(tasks)};\nlet __devroyaleActive = 0;\nlet __devroyaleMaxActive = 0;\nconst __devroyaleTasks = __devroyaleTaskSpecs.map(({ value, delayMs }) => () => new Promise((resolve) => {\n  __devroyaleActive += 1;\n  __devroyaleMaxActive = Math.max(__devroyaleMaxActive, __devroyaleActive);\n  setTimeout(() => { __devroyaleActive -= 1; resolve(value); }, delayMs);\n}));\nPromise.resolve(${functionName}(__devroyaleTasks))\n  .then((results) => console.log(JSON.stringify({ results, withinLimit: __devroyaleMaxActive <= 2 })))\n  .catch((error) => { console.error(error); process.exitCode = 1; });\n`,
-      }
-    }
-
-    if (payload.judgeConfig.harness === 'javascript_memoization') {
-      const invocations = Array.isArray(test.input.invocations) ? test.input.invocations : []
-      return {
-        language: 'javascript',
-        sourceCode: `${payload.sourceCode}\n\nconst __devroyaleInvocations = ${JSON.stringify(invocations)};\nlet __devroyaleCalls = 0;\nconst __devroyaleMemoized = ${functionName}((...values) => {\n  __devroyaleCalls += 1;\n  return values.reduce((total, value) => total + value, 0);\n});\nconst __devroyaleResults = __devroyaleInvocations.map((values) => __devroyaleMemoized(...values));\nconsole.log(JSON.stringify({ results: __devroyaleResults, calls: __devroyaleCalls }));\n`,
-      }
-    }
 
     if (payload.language === 'python') {
       const encodedArgs = JSON.stringify(JSON.stringify(args))
@@ -207,8 +202,6 @@ export function sanitizeSubmissionOutcome(
   return {
     status: outcome.status,
     message: SUBMIT_MESSAGES[outcome.status],
-    executionTime: outcome.executionTime,
-    memoryUsed: outcome.memoryUsed,
   }
 }
 

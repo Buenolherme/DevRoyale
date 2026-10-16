@@ -8,8 +8,12 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "node scripts/check-product.mjs && node scripts/check-multiplayer-judge.mjs && node scripts/check-edge.mjs",
-    "test:rooms:postgres": "node scripts/check-room-host-transfer.mjs"
+    "test": "node scripts/check-product.mjs && node scripts/check-multiplayer-judge.mjs && node scripts/check-edge.mjs && node scripts/check-judge-policy.mjs && node scripts/check-a4-catalog.mjs && node scripts/check-suite-boundaries.mjs",
+    "test:judge:isolated": "node scripts/check-judge-isolated.mjs",
+    "test:rooms:postgres": "node scripts/check-room-host-transfer.mjs",
+    "test:a4:postgres": "node scripts/check-room-host-transfer.mjs --a4",
+    "test:suites:postgres": "node scripts/check-room-host-transfer.mjs --suites",
+    "db:demo:local": "node scripts/seed-judge-demo.mjs --confirm-local-demo"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.3",

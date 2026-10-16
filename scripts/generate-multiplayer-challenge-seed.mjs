@@ -1,10 +1,8 @@
 import fs from 'node:fs'
 import ts from 'typescript'
 
-const migrationPath = new URL(
-  '../supabase/migrations/20260814020000_real_multiplayer_battles.sql',
-  import.meta.url,
-)
+// Historical cases are PUBLIC. Export only a demo artifact; never rewrite migrations.
+const demoOutput = new URL('../supabase/seeds/legacy-demo-export.json', import.meta.url)
 
 function transpile(path) {
   return ts.transpileModule(fs.readFileSync(new URL(`../${path}`, import.meta.url), 'utf8'), {
@@ -453,74 +451,5 @@ for (const challenge of catalog) {
   }
 }
 
-const generatedSql = `-- CHALLENGE_SEED_GENERATED_START
-insert into public.multiplayer_challenges (
-  slug, language, difficulty, title, statement, instructions, starter_code,
-  public_examples, validation_type, judge_config, is_active
-)
-select
-  seed.slug,
-  seed.language::public.room_language,
-  seed.difficulty::public.room_difficulty,
-  seed.title,
-  seed.statement,
-  seed.instructions,
-  seed.starter_code,
-  seed.public_examples,
-  seed.validation_type::public.multiplayer_validation_type,
-  seed.judge_config,
-  seed.is_active
-from jsonb_to_recordset($catalog$${JSON.stringify(publicRows)}$catalog$::jsonb) as seed(
-  slug text,
-  language text,
-  difficulty text,
-  title text,
-  statement text,
-  instructions jsonb,
-  starter_code text,
-  public_examples jsonb,
-  validation_type text,
-  judge_config jsonb,
-  is_active boolean
-);
-
-insert into devroyale_private.multiplayer_challenge_tests (
-  challenge_id, is_public, ordinal, input, expected, validator_config, weight
-)
-select
-  challenges.id,
-  seed.is_public,
-  seed.ordinal,
-  seed.input,
-  seed.expected,
-  seed.validator_config,
-  seed.weight
-from jsonb_to_recordset($tests$${JSON.stringify(judgeRows)}$tests$::jsonb) as seed(
-  slug text,
-  is_public boolean,
-  ordinal smallint,
-  input jsonb,
-  expected jsonb,
-  validator_config jsonb,
-  weight smallint
-)
-join public.multiplayer_challenges as challenges on challenges.slug = seed.slug;
--- CHALLENGE_SEED_GENERATED_END`
-
-const migration = fs.readFileSync(migrationPath, 'utf8')
-const hasGeneratedMarker = migration.includes('-- CHALLENGE_SEED_GENERATED_START')
-const hasPlaceholder = migration.includes('-- CHALLENGE_SEED_GENERATED_HERE')
-
-if (!hasGeneratedMarker && !hasPlaceholder) {
-  throw new Error('Challenge seed marker not found')
-}
-
-const nextMigration = hasGeneratedMarker
-  ? migration.replace(
-      /-- CHALLENGE_SEED_GENERATED_START[\s\S]*?-- CHALLENGE_SEED_GENERATED_END/,
-      generatedSql,
-    )
-  : migration.replace('-- CHALLENGE_SEED_GENERATED_HERE', generatedSql)
-
-if (nextMigration !== migration) fs.writeFileSync(migrationPath, nextMigration)
-console.log(`${nextMigration === migration ? 'Verified' : 'Generated'} ${publicRows.length} challenges, ${publicRows.filter((row) => row.is_active).length} active, ${privateRows.length} hidden and ${judgeRows.length - privateRows.length} public judge tests.`)
+fs.writeFileSync(demoOutput, JSON.stringify({ classification: 'public_demo', catalog: publicRows, tests: judgeRows }, null, 2) + '\n')
+console.log('Exported PUBLIC demonstration data; no migrations or competitive suites changed.')

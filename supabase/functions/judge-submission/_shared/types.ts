@@ -54,6 +54,8 @@ export interface ValidatorConfig {
 }
 
 export interface JudgePayload {
+  suiteId: string
+  suiteVersion: number
   submissionId: string
   matchId: string
   roundId: string

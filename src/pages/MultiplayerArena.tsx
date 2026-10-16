@@ -18,6 +18,7 @@ import { useAuth, useBattleIntegrity, useDialogFocus } from '@/hooks'
 import {
   MultiplayerBattleServiceError,
   advanceRound,
+  cancelUnavailableMatch,
   getCurrentMatch,
   getMatch,
   runCode,
@@ -122,7 +123,7 @@ function MultiplayerArenaContent() {
   const [judgeUnavailable, setJudgeUnavailable] = useState(false)
   const [surrenderOpen, setSurrenderOpen] = useState(false)
   const [dismissedResultId, setDismissedResultId] = useState<string | null>(null)
-  const [action, setAction] = useState<'run' | 'submit' | 'surrender' | null>(null)
+  const [action, setAction] = useState<'run' | 'submit' | 'surrender' | 'cancel' | null>(null)
   const [realtimeConnected, setRealtimeConnected] = useState(false)
   const [connectedUserIds, setConnectedUserIds] = useState<Set<string>>(new Set())
   const [opponentActivity, setOpponentActivity] = useState('Codando...')
@@ -270,7 +271,7 @@ function MultiplayerArenaContent() {
     : null
 
   useEffect(() => {
-    if (!activeMatchId || !activeRoundId || activeMatchStatus !== 'between_rounds' || roundCountdown !== 0) return
+    if (battle?.unavailable || !activeMatchId || !activeRoundId || activeMatchStatus !== 'between_rounds' || roundCountdown !== 0) return
     let active = true
     const advance = async () => {
       if (advancingRoundRef.current === activeRoundId) return
@@ -286,7 +287,7 @@ function MultiplayerArenaContent() {
     void advance()
     const retryId = window.setInterval(() => void advance(), 3_000)
     return () => { active = false; window.clearInterval(retryId) }
-  }, [activeMatchId, activeMatchStatus, activeRoundId, reloadMatch, roundCountdown])
+  }, [activeMatchId, activeMatchStatus, activeRoundId, battle?.unavailable, reloadMatch, roundCountdown])
 
   const me = battle?.players.find((player) => player.userId === user?.id)
   const opponent = battle?.players.find((player) => player.userId !== user?.id)
@@ -294,7 +295,7 @@ function MultiplayerArenaContent() {
   const matchFinished = battle?.match.status === 'finished'
   const matchEnded = Boolean(battle && ['finished', 'cancelled', 'abandoned'].includes(battle.match.status))
   const resultOpen = matchEnded && dismissedResultId !== battle?.match.id
-  const roundActive = battle?.match.status === 'active' && battle.round.status === 'active'
+  const roundActive = !battle?.unavailable && battle?.match.status === 'active' && battle.round.status === 'active'
   const ownSubmission = battle?.ownLatestSubmission
   const evaluating = Boolean(ownSubmission && ['queued', 'running'].includes(ownSubmission.status))
   const maxRounds = battle ? maxRoundsByFormat[battle.match.matchFormat] : 1
@@ -319,7 +320,7 @@ function MultiplayerArenaContent() {
     onClose: () => setDismissedResultId(battle?.match.id ?? null),
   })
   useDialogFocus({
-    open: surrenderOpen && !matchEnded,
+    open: surrenderOpen && !matchEnded && !battle?.unavailable,
     containerRef: surrenderDialogRef,
     onClose: () => { if (!actionRef.current) setSurrenderOpen(false) },
   })
@@ -393,7 +394,7 @@ function MultiplayerArenaContent() {
   }
 
   const handleSurrender = async () => {
-    if (!battle || matchEnded || actionRef.current) return
+    if (!battle || battle.unavailable || matchEnded || actionRef.current) return
     const scope = lifecycleRef.current
     actionRef.current = true
     setAction('surrender')
@@ -409,6 +410,23 @@ function MultiplayerArenaContent() {
         setSurrenderOpen(false)
         setError(safeErrorMessage(surrenderError))
       }
+    } finally {
+      actionRef.current = false
+      if (scope === lifecycleRef.current) setAction(null)
+    }
+  }
+
+  const handleUnavailableCancellation = async () => {
+    if (!battle?.unavailable || matchEnded || actionRef.current) return
+    const scope = lifecycleRef.current
+    actionRef.current = true
+    setAction('cancel')
+    setError('')
+    try {
+      await cancelUnavailableMatch(battle.match.id)
+      if (scope === lifecycleRef.current) await reloadMatch()
+    } catch (cancelError) {
+      if (scope === lifecycleRef.current) setError(safeErrorMessage(cancelError))
     } finally {
       actionRef.current = false
       if (scope === lifecycleRef.current) setAction(null)
@@ -525,6 +543,21 @@ function MultiplayerArenaContent() {
         </div>
       )}
 
+      {battle.evaluationMode === 'demo' && (
+        <p role="status">Ambiente demonstrativo: esta partida usa testes públicos de desenvolvimento.</p>
+      )}
+      {battle.unavailable && !matchEnded && (
+        <Card role="status">
+          <CardHeader><CardTitle>Desafio indisponível</CardTitle></CardHeader>
+          <CardContent>
+            <p>Esta partida contém um desafio que foi suspenso. Encerre a partida sem vencedor, derrota ou novos pontos. O placar anterior será mantido apenas no histórico.</p>
+            <Button type="button" disabled={Boolean(action)} onClick={() => void handleUnavailableCancellation()}>
+              {action === 'cancel' ? 'Encerrando...' : 'Encerrar sem vencedor'}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       <section className="multiplayer-scoreboard" aria-label="Placar oficial">
         <div className="multiplayer-score-player multiplayer-score-player--self">
           <span>Você</span>
@@ -551,7 +584,7 @@ function MultiplayerArenaContent() {
         notice={notice}
       />
 
-      {battle.match.status === 'between_rounds' && (
+      {battle.match.status === 'between_rounds' && !battle.unavailable && (
         <section className="multiplayer-round-intermission" aria-label="Intervalo entre rounds">
           <Badge variant="gold">Round encerrado</Badge>
           <h2>{previousRoundWinner ? `Round para ${playerName(previousRoundWinner)}` : 'Placar atualizado'}</h2>
@@ -688,7 +721,7 @@ function MultiplayerArenaContent() {
             </CardContent>
           </Card>
 
-          {!matchEnded && (
+          {!matchEnded && !battle.unavailable && (
             <Button
               type="button"
               variant="danger"
@@ -703,7 +736,7 @@ function MultiplayerArenaContent() {
       </div>
       </div>
 
-      {surrenderOpen && !matchEnded && (
+      {surrenderOpen && !matchEnded && !battle.unavailable && (
         <div className="battle-exit-dialog" role="presentation">
           <section ref={surrenderDialogRef} className="battle-exit-dialog__panel" role="dialog" aria-modal="true" aria-labelledby="arena-surrender-title" aria-describedby="arena-surrender-description" tabIndex={-1}>
             <span className="battle-exit-dialog__eyebrow">Batalha em andamento</span>

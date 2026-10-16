@@ -22,6 +22,7 @@ function response(body: Record<string, unknown>, status = 200) {
 function friendlyError(error: unknown): { message: string; status: number } {
   const raw = error instanceof Error ? error.message : typeof error === 'object' && error !== null && 'message' in error ? String(error.message) : String(error)
   const mappings: Array<[RegExp, string, number]> = [
+    [/challenge_unavailable/, 'Esta partida contém um desafio indisponível. Encerre-a sem vencedor para jogar novamente.', 409],
     [/not_authenticated|Invalid JWT|Auth session missing/i, 'Sua sessão expirou. Entre novamente.', 401],
     [/match_not_found|round_not_active|match_not_active/, 'Esta rodada não está mais disponível.', 409],
     [/submission_rate_limited/, 'Aguarde um instante antes de avaliar novamente.', 429],

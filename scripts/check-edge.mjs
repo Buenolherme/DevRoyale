@@ -26,7 +26,7 @@ assert.equal((await handler(request('{broken'))).status, 400)
 assert.equal((await handler(request({ ...submission, mode: 'invalid' }))).status, 400)
 assert.equal((await handler(request({ ...submission, sourceCode: 'x'.repeat(20481) }))).status, 400)
 assert.equal(rpcCalls.length, 0)
-for (const [message, status] of [['submission_rate_limited', 429], ['round_not_active', 409], ['source_code_size_invalid', 413], ['internal_private_detail', 500]]) {
+for (const [message, status] of [['submission_rate_limited', 429], ['round_not_active', 409], ['challenge_unavailable', 409], ['source_code_size_invalid', 413], ['internal_private_detail', 500]]) {
   rpcError = { message, details: 'private SQL', hint: 'secret' }
   const response = await handler(request(submission))
   assert.equal(response.status, status)

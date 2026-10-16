@@ -24,7 +24,7 @@ const inactiveSlugs = catalog
   .sort()
 
 assert.equal(catalog.length, 56, 'O catálogo V1.5 deve continuar com 56 entradas')
-assert.equal(activeCatalog.length, 52, 'A porta multiplayer deve manter 52 desafios ativos')
+assert.equal(activeCatalog.length, 52, 'A migration histórica contém 52 desafios ativos antes do A4')
 assert.equal(privateTests.length, 66, 'A migration deve conter 66 casos privados sem duplicatas desnecessárias')
 assert.equal(publicJudgeTests.length, 52, 'Cada desafio ativo deve ter um caso público server-side')
 assert.deepEqual(inactiveSlugs, [
@@ -225,7 +225,7 @@ assert.throws(() => validators.buildExecutionRequest({
   judgeConfig: {},
 }, { input: {}, expected: [] }), /sql_validation_error/)
 
-const queueRequest = validators.buildExecutionRequest({
+assert.throws(() => validators.buildExecutionRequest({
   ...basePayload,
   sourceCode: 'async function executar(tarefas) { return Promise.all(tarefas.map(t => t())) }',
   language: 'javascript',
@@ -234,8 +234,7 @@ const queueRequest = validators.buildExecutionRequest({
 }, {
   input: { tasks: [{ value: 'A', delayMs: 1 }] },
   expected: { results: ['A'], withinLimit: true },
-})
-assert.match(queueRequest.sourceCode, /__devroyaleMaxActive <= 2/)
+}), /trusted_instrumentation_unavailable/)
 
 const nearMiss = validators.compareExecution({
   token: 'local',
@@ -262,5 +261,7 @@ const hiddenRuntimeError = validators.sanitizeSubmissionOutcome({
 assert.doesNotMatch(JSON.stringify(hiddenRuntimeError), new RegExp(secretInput))
 assert.equal(hiddenRuntimeError.message, 'Sua solução encontrou um erro durante os testes.')
 assert.equal(hiddenRuntimeError.stdout, undefined)
+assert.equal(hiddenRuntimeError.executionTime, undefined)
+assert.equal(hiddenRuntimeError.memoryUsed, undefined)
 
-console.log('Multiplayer judge checks: auth modes, 56 catalog, 52 active, 66 private tests, 43 challenges with distinct hidden cases, sanitizer and recovery invariants OK.')
+console.log('Historical multiplayer judge checks OK: 56 catalog entries, 52 formerly active, 66 disclosed non-example cases, sanitizer and recovery invariants. These are not secret competitive data.')

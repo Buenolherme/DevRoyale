@@ -10,6 +10,9 @@ const migrationDir = path.join(root, 'supabase/migrations')
 const testDir = path.join(root, 'supabase/tests/room_host_transfer')
 const fix = '20261013000000_fix_leave_room_host_transfer.sql'
 const readyFix = '20261013010000_fix_set_room_ready_status_type.sql'
+const a4Fix = '20261014000000_replace_untrusted_javascript_challenges.sql'
+const a4Only = process.argv.includes('--a4')
+const suitesOnly = process.argv.includes('--suites')
 // Explicit local transport: never use the active Docker context or a remote host.
 const host = process.platform === 'win32'
   ? 'npipe:////./pipe/dockerDesktopLinuxEngine'
@@ -65,22 +68,43 @@ try {
   const migrations = readdirSync(migrationDir).filter(name => name.endsWith('.sql')).sort()
   assert(migrations.includes(fix), 'Host-transfer migration is missing')
   assert(migrations.includes(readyFix), 'Ready-status migration is missing')
-  for (const name of migrations.filter(name => name < fix)) {
-    runFile(path.join(migrationDir, name))
+  if (a4Only || suitesOnly) {
+    assert(migrations.includes(a4Fix), 'A4 replacement migration is missing')
+    for (const name of migrations) {
+      if (a4Only && name === a4Fix) runFile(path.join(root, 'supabase/tests/a4/legacy_setup.sql'))
+      runFile(path.join(migrationDir, name))
+    }
+    runFile(path.join(root, 'supabase/seeds/demo.sql'))
+    if (suitesOnly) {
+      // Repeated public seed must be harmless and keep the production policy.
+      runFile(path.join(root, 'supabase/seeds/demo.sql'))
+      runFile(path.join(root, 'supabase/tests/judge_suites/regression.sql'))
+      console.log('PASS: suite separation, permissions, version pinning and competitive availability (real isolated PostgreSQL)')
+    } else {
+      sql("update devroyale_private.judge_policy set environment = 'local', mode = 'demo';")
+      runFile(path.join(root, 'supabase/tests/a4/regression.sql'))
+      console.log('PASS: A4 catalog, legacy containment, cancellation, matchmaking and BO1/BO3/BO5 (real isolated PostgreSQL, PUBLIC demo data)')
+    }
+  } else {
+    for (const name of migrations.filter(name => name < fix)) {
+      runFile(path.join(migrationDir, name))
+    }
+    // Reproduce both the CURRENT_ROLE name collision and the unique-index defect.
+    runFile(path.join(testDir, 'regression.sql'), ['-v', 'expect_bug=true'])
+    for (const name of migrations.filter(name => name >= fix && name < readyFix)) {
+      runFile(path.join(migrationDir, name))
+    }
+    runFile(path.join(testDir, 'ready.sql'), ['-v', 'expect_bug=true'])
+    for (const name of migrations.filter(name => name >= readyFix)) {
+      runFile(path.join(migrationDir, name))
+    }
+    runFile(path.join(root, 'supabase/seeds/demo.sql'))
+    sql("update devroyale_private.judge_policy set environment = 'local', mode = 'demo';")
+    runFile(path.join(testDir, 'ready.sql'), ['-v', 'expect_bug=false'])
+    runFile(path.join(testDir, 'regression.sql'), ['-v', 'expect_bug=false'])
+    runFile(path.join(testDir, 'concurrency.sql'))
+    console.log('PASS: PostgreSQL ready-status and host-transfer regression suites (isolated container)')
   }
-  // Reproduce both the CURRENT_ROLE name collision and the unique-index defect.
-  runFile(path.join(testDir, 'regression.sql'), ['-v', 'expect_bug=true'])
-  for (const name of migrations.filter(name => name >= fix && name < readyFix)) {
-    runFile(path.join(migrationDir, name))
-  }
-  runFile(path.join(testDir, 'ready.sql'), ['-v', 'expect_bug=true'])
-  for (const name of migrations.filter(name => name >= readyFix)) {
-    runFile(path.join(migrationDir, name))
-  }
-  runFile(path.join(testDir, 'ready.sql'), ['-v', 'expect_bug=false'])
-  runFile(path.join(testDir, 'regression.sql'), ['-v', 'expect_bug=false'])
-  runFile(path.join(testDir, 'concurrency.sql'))
-  console.log('PASS: PostgreSQL ready-status and host-transfer regression suites (isolated container)')
 } catch (error) {
   console.error('PostgreSQL regression suite FAILED or could not run; this is NOT a passing database check.')
   console.error('Requires a running local Docker engine and an existing postgres:17 image. No image is downloaded automatically.')

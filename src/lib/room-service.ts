@@ -29,6 +29,7 @@ export type RoomErrorCode =
   | 'INVITE_UNAVAILABLE'
   | 'SOCIAL_RESTRICTION'
   | 'QUICK_MATCH_RESTRICTED'
+  | 'POOL_UNAVAILABLE'
   | 'NETWORK'
   | 'UNEXPECTED'
 
@@ -85,6 +86,7 @@ function mapRoomError(error: unknown): RoomServiceError {
   }
 
   const mappings: Array<[RegExp, string, RoomErrorCode]> = [
+    [/challenge_pool_unavailable/, 'Não há desafios disponíveis para esta linguagem e dificuldade. Escolha outra combinação ou tente mais tarde.', 'POOL_UNAVAILABLE'],
     [/not_authenticated/, 'Entre na sua conta para acessar o Multiplayer.', 'NOT_AUTHENTICATED'],
     [/room_not_found/, 'Sala não encontrada. Confira o código e tente novamente.', 'ROOM_NOT_FOUND'],
     [/not_room_member/, 'Você não faz parte desta sala.', 'NOT_ROOM_MEMBER'],

@@ -315,6 +315,10 @@ export type Database = {
         Args: { p_match_id: string }
         Returns: DatabaseMultiplayerMatch
       }
+      cancel_unavailable_multiplayer_match: {
+        Args: { p_match_id: string }
+        Returns: DatabaseMultiplayerMatch
+      }
     }
     Enums: {
       friendship_status: FriendshipStatus

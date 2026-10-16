@@ -1,6 +1,7 @@
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2.112.3'
 import { Judge0Provider } from './judge0.ts'
 import {
+  assertSupportedJudgePayload,
   buildExecutionRequest,
   compareExecution,
   sanitizeSubmissionOutcome,
@@ -25,10 +26,6 @@ export interface SubmissionLeaseState {
 interface ProcessSubmissionOptions {
   workerId?: string
   acquiredLease?: SubmissionLeaseState
-}
-
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : String(error)
 }
 
 async function finalize(
@@ -86,12 +83,11 @@ async function recordWorkerError(
   admin: SupabaseClient,
   submissionId: string,
   workerId: string,
-  error: unknown,
 ) {
   await admin.rpc('record_multiplayer_submission_job_error_internal', {
     p_submission_id: submissionId,
     p_worker_id: workerId,
-    p_last_error: errorMessage(error),
+    p_last_error: 'judge_worker_failed',
   })
 }
 
@@ -123,6 +119,9 @@ export async function processSubmission(
     })
     if (error) throw error
     const payload = data as JudgePayload
+    // Check before provider creation and token resumption: cached/queued results
+    // from the old, forgeable harness must never be accepted either.
+    assertSupportedJudgePayload(payload)
     if (!Array.isArray(payload.tests) || payload.tests.length === 0) {
       throw new Error('judge_tests_missing')
     }
@@ -194,16 +193,15 @@ export async function processSubmission(
       message: payload.mode === 'run' ? 'Testes públicos concluídos.' : 'Solução aceita.',
     })
     return 'processed' as const
-  } catch (processingError) {
+  } catch {
     try {
       await finalizeSubmissionAsInternalError(admin, submissionId, workerId)
-    } catch (finalizationError) {
+    } catch {
       try {
         await recordWorkerError(
           admin,
           submissionId,
           workerId,
-          `${errorMessage(processingError)}; finalize:${errorMessage(finalizationError)}`,
         )
       } catch {
         // The persisted lease expires, allowing a later reconciliation attempt.
